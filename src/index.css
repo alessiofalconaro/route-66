@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+/* Respect the iPhone notch / home bar (safe areas) */
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  /* Prevent iOS Safari from auto-zooming inputs and bouncing */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  @apply bg-stone-100 text-stone-900;
+}
