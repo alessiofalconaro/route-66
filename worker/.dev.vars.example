@@ -1,0 +1,3 @@
+# Copy to .dev.vars for LOCAL testing only (.dev.vars is gitignored).
+# For production use: npx wrangler secret put GROQ_API_KEY
+GROQ_API_KEY = "gsk_PUT_YOUR_KEY_HERE_NEVER_COMMIT_THE_REAL_ONE"

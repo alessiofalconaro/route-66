@@ -1,0 +1,12 @@
+# Cloudflare Worker config — free tier, no billing.
+# The Groq API key is NOT here. It is set once with:
+#   npx wrangler secret put GROQ_API_KEY
+# (see the README — the human runs that command, the key never touches git)
+
+name = "route66-chat"
+main = "src/index.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+# NOT a secret: the exact origin allowed to call this Worker (CORS).
+ALLOWED_ORIGIN = "https://alessiofalconaro.github.io"
