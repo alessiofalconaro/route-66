@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#b91c1c"/>
+  <!-- Route 66 style shield -->
+  <path d="M256 72c-48 28-104 36-152 32 0 156 40 260 152 336 112-76 152-180 152-336-48 4-104-4-152-32z"
+        fill="#fafaf9" stroke="#1c1917" stroke-width="12"/>
+  <text x="256" y="222" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-weight="bold" font-size="72" fill="#1c1917">ROUTE</text>
+  <text x="256" y="360" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-weight="bold" font-size="150" fill="#1c1917">66</text>
+</svg>

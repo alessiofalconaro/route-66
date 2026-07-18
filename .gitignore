@@ -1,0 +1,16 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# Environment files — NEVER commit secrets (see CLAUDE.md section 9b)
+.env
+.env.*
+.dev.vars
+.wrangler/
+
+# Build cache
+tsconfig.tsbuildinfo
+
+# Editor / OS noise
+.DS_Store
+*.local
