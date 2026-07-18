@@ -1,0 +1,280 @@
+// Lightweight i18n: a typed EN/ES dictionary + a React context.
+// Place names stay in English (proper nouns) — only UI strings are translated.
+// Java analogy: a ResourceBundle, but type-checked — a missing key is a
+// compile error, not a runtime surprise.
+
+import { createContext, useContext, type ReactNode } from 'react';
+import { usePersistentState } from './lib/storage';
+
+export type Lang = 'en' | 'es';
+
+// `typeof en` derives the type from the English object, so the Spanish
+// object MUST have exactly the same keys or TypeScript refuses to compile.
+const en = {
+  // Navigation
+  navHome: 'Home',
+  navHotels: 'Hotels',
+  navFuel: 'Fuel',
+  navChat: 'Assistant',
+  navMore: 'More',
+  // Home
+  whereAreWe: 'Where are we?',
+  inACity: 'In a city',
+  drivingLeg: 'Driving A → B',
+  chooseCity: 'Choose a city…',
+  chooseLeg: 'Choose a leg…',
+  nearYou: 'Detected near you',
+  useLocation: 'Use my location',
+  locating: 'Locating…',
+  locationFailed: 'No location available — pick manually.',
+  tripTitle: 'Route 66 · Chicago → LA',
+  tripDates: 'Aug 5–19, 2026',
+  // Segment view
+  openInMaps: 'Open in Google Maps',
+  directions: 'Directions',
+  fuelStopsTitle: 'Fuel stops on this leg',
+  tonightsHotel: "Tonight's hotel",
+  minutes: 'min',
+  miles: 'mi',
+  hoursShort: 'h',
+  editItinerary: 'Edit',
+  doneEditing: 'Done',
+  addStop: 'Add stop',
+  removeStop: 'Remove',
+  editStop: 'Edit',
+  moveUp: 'Move up',
+  moveDown: 'Move down',
+  stopName: 'Name',
+  stopCity: 'City',
+  stopCategory: 'Category',
+  stopDwell: 'Dwell time (minutes)',
+  stopNote: 'Note',
+  stopMapsQuery: 'Google Maps search text',
+  save: 'Save',
+  cancel: 'Cancel',
+  noPois: 'No stops here yet — tap Edit to add one.',
+  emptyCityHint: 'Overnight stop. Nearby sights are listed on the driving legs.',
+  // Hotels
+  hotelsTitle: 'Hotels',
+  parking: 'Parking',
+  resortFee: 'Resort fee',
+  nights16: '16 nights · Chicago pickup, LAX drop-off',
+  // Fuel
+  fuelTitle: 'Fuel plan',
+  fuelTotal: 'Planned total',
+  splitThreeWays: 'split 3 ways',
+  perGal: '/gal',
+  gallons: 'gal',
+  fuelWarnCA: 'Fill the tank FULL before entering California — gas jumps to $5+/gal.',
+  fuelWarnMO: 'Cheapest fuel of the route is in Missouri (Joplin $2.98/gal).',
+  fuelWarnQuarter: 'Never below 1/4 tank around Four Corners / Monument Valley / Horseshoe Bend — stations are sparse.',
+  // Assistant
+  chatTitle: 'Trip assistant',
+  chatPickSegment: 'Which part of the trip?',
+  chatOfflineIdeas: 'Extra ideas (works offline)',
+  chatAskMore: 'Ask a follow-up (needs signal)…',
+  chatSend: 'Send',
+  chatThinking: 'Thinking…',
+  chatOfflineShown: 'No connection — offline suggestions shown.',
+  chatNotConfigured: 'Online assistant not configured — offline suggestions always work.',
+  // Expenses
+  expensesTitle: 'Expenses',
+  expensesSingleWriter: 'Single writer: only Falco records expenses, on this device.',
+  expenseAdd: 'Add expense',
+  expensePayer: 'Who paid?',
+  expenseAmount: 'Amount (USD)',
+  expenseCategory: 'Category',
+  expenseNote: 'Note',
+  expenseDate: 'Date',
+  balances: 'Net balance per person',
+  owes: 'owes',
+  settledUp: 'All settled up!',
+  exportExpenses: 'Export backup (JSON)',
+  deleteExpense: 'Delete',
+  catFuel: 'Fuel',
+  catHotel: 'Hotel',
+  catFood: 'Food',
+  catTickets: 'Tickets',
+  catSouvenirs: 'Souvenirs',
+  catOther: 'Other',
+  // More screen
+  moreTitle: 'More',
+  albumButton: 'Open our trip album',
+  albumNotSet: 'Set the shared Google Photos album link in Settings first.',
+  emergencyTitle: 'Emergency',
+  emergency911: 'Emergency (call 911)',
+  emergencyRoadside: 'Hertz roadside assistance',
+  emergencyConsulate: 'Italian Consulate — Los Angeles',
+  emergencyEmbassy: 'Italian Embassy — Washington DC',
+  checklistTitle: 'Pre-departure checklist',
+  chkIdp: 'International Driving Permit (each driver)',
+  chkCard: 'Physical chip+PIN Visa/Mastercard, international transactions enabled (neobank cards not accepted at the counter)',
+  chkJesse: 'Budget the additional-driver fee for Jesse',
+  chkParkPass: 'America the Beautiful national-parks pass ($80)',
+  chkWater: 'Water: 1 gallon per person per day in the desert (38–49°C)',
+  weatherTitle: 'Desert heat warning',
+  weatherBody: 'Western New Mexico, Arizona and Nevada legs reach 38–49°C in August. Drink ~1 gallon (4 L) of water per person per day, refuel early, never rely on cell signal.',
+  // Settings
+  settingsTitle: 'Settings',
+  language: 'Language',
+  travelers: 'Travelers',
+  whoAmI: 'Who am I (this phone)',
+  albumUrl: 'Shared Google Photos album URL',
+  albumUrlHint: 'Paste the invite link of the shared album (invite-only, not public).',
+  resetItinerary: 'Reset itinerary to default',
+  resetConfirm: 'Discard ALL your itinerary edits and restore the original plan?',
+  exportItinerary: 'Export itinerary (JSON)',
+  importItinerary: 'Import itinerary (JSON)',
+  importConfirm: 'Replace your current itinerary edits with the imported file?',
+  importError: 'That file is not a valid itinerary export.',
+  greeting: 'Hi',
+  firstRunTitle: 'Who is using this phone?',
+  firstRunHint: 'Used for the greeting only — you can change it any time in Settings.',
+  // NBA
+  nbaBadge: 'NBA',
+  nbaOffseason: 'August = NBA offseason. Verify hours & jersey stock before going.',
+};
+
+const es: typeof en = {
+  navHome: 'Inicio',
+  navHotels: 'Hoteles',
+  navFuel: 'Gasolina',
+  navChat: 'Asistente',
+  navMore: 'Más',
+  whereAreWe: '¿Dónde estamos?',
+  inACity: 'En una ciudad',
+  drivingLeg: 'Conduciendo A → B',
+  chooseCity: 'Elige una ciudad…',
+  chooseLeg: 'Elige un tramo…',
+  nearYou: 'Detectado cerca de ti',
+  useLocation: 'Usar mi ubicación',
+  locating: 'Localizando…',
+  locationFailed: 'Sin ubicación — elige manualmente.',
+  tripTitle: 'Route 66 · Chicago → LA',
+  tripDates: '5–19 ago 2026',
+  openInMaps: 'Abrir en Google Maps',
+  directions: 'Cómo llegar',
+  fuelStopsTitle: 'Paradas de gasolina en este tramo',
+  tonightsHotel: 'Hotel de esta noche',
+  minutes: 'min',
+  miles: 'mi',
+  hoursShort: 'h',
+  editItinerary: 'Editar',
+  doneEditing: 'Listo',
+  addStop: 'Añadir parada',
+  removeStop: 'Quitar',
+  editStop: 'Editar',
+  moveUp: 'Subir',
+  moveDown: 'Bajar',
+  stopName: 'Nombre',
+  stopCity: 'Ciudad',
+  stopCategory: 'Categoría',
+  stopDwell: 'Tiempo de visita (minutos)',
+  stopNote: 'Nota',
+  stopMapsQuery: 'Texto de búsqueda en Google Maps',
+  save: 'Guardar',
+  cancel: 'Cancelar',
+  noPois: 'Aún no hay paradas — toca Editar para añadir una.',
+  emptyCityHint: 'Parada nocturna. Los puntos de interés cercanos están en los tramos.',
+  hotelsTitle: 'Hoteles',
+  parking: 'Aparcamiento',
+  resortFee: 'Tasa de resort',
+  nights16: '16 noches · Recogida en Chicago, entrega en LAX',
+  fuelTitle: 'Plan de gasolina',
+  fuelTotal: 'Total previsto',
+  splitThreeWays: 'dividido entre 3',
+  perGal: '/gal',
+  gallons: 'gal',
+  fuelWarnCA: 'Llena el depósito COMPLETO antes de entrar en California — la gasolina sube a $5+/gal.',
+  fuelWarnMO: 'La gasolina más barata de la ruta está en Misuri (Joplin $2.98/gal).',
+  fuelWarnQuarter: 'Nunca por debajo de 1/4 de depósito en Four Corners / Monument Valley / Horseshoe Bend — hay pocas gasolineras.',
+  chatTitle: 'Asistente de viaje',
+  chatPickSegment: '¿Qué parte del viaje?',
+  chatOfflineIdeas: 'Ideas extra (funciona sin conexión)',
+  chatAskMore: 'Haz otra pregunta (necesita señal)…',
+  chatSend: 'Enviar',
+  chatThinking: 'Pensando…',
+  chatOfflineShown: 'Sin conexión — se muestran las sugerencias offline.',
+  chatNotConfigured: 'Asistente online no configurado — las sugerencias offline siempre funcionan.',
+  expensesTitle: 'Gastos',
+  expensesSingleWriter: 'Un solo registrador: solo Falco anota los gastos, en este teléfono.',
+  expenseAdd: 'Añadir gasto',
+  expensePayer: '¿Quién pagó?',
+  expenseAmount: 'Importe (USD)',
+  expenseCategory: 'Categoría',
+  expenseNote: 'Nota',
+  expenseDate: 'Fecha',
+  balances: 'Balance neto por persona',
+  owes: 'debe a',
+  settledUp: '¡Todo saldado!',
+  exportExpenses: 'Exportar copia (JSON)',
+  deleteExpense: 'Borrar',
+  catFuel: 'Gasolina',
+  catHotel: 'Hotel',
+  catFood: 'Comida',
+  catTickets: 'Entradas',
+  catSouvenirs: 'Recuerdos',
+  catOther: 'Otro',
+  moreTitle: 'Más',
+  albumButton: 'Abrir nuestro álbum del viaje',
+  albumNotSet: 'Configura primero el enlace del álbum compartido de Google Photos en Ajustes.',
+  emergencyTitle: 'Emergencias',
+  emergency911: 'Emergencia (llamar al 911)',
+  emergencyRoadside: 'Asistencia en carretera Hertz',
+  emergencyConsulate: 'Consulado de Italia — Los Ángeles',
+  emergencyEmbassy: 'Embajada de Italia — Washington DC',
+  checklistTitle: 'Lista antes de salir',
+  chkIdp: 'Permiso Internacional de Conducir (cada conductor)',
+  chkCard: 'Tarjeta física Visa/Mastercard con chip+PIN y pagos internacionales activados (las tarjetas de neobancos no se aceptan en el mostrador)',
+  chkJesse: 'Presupuestar la tarifa de conductor adicional para Jesse',
+  chkParkPass: 'Pase de parques nacionales America the Beautiful ($80)',
+  chkWater: 'Agua: 1 galón por persona y día en el desierto (38–49 °C)',
+  weatherTitle: 'Aviso de calor del desierto',
+  weatherBody: 'Los tramos del oeste de Nuevo México, Arizona y Nevada alcanzan 38–49 °C en agosto. Bebe ~1 galón (4 L) de agua por persona al día, reposta pronto y no cuentes con tener señal.',
+  settingsTitle: 'Ajustes',
+  language: 'Idioma',
+  travelers: 'Viajeros',
+  whoAmI: 'Quién soy (este teléfono)',
+  albumUrl: 'URL del álbum compartido de Google Photos',
+  albumUrlHint: 'Pega el enlace de invitación del álbum compartido (solo por invitación, no público).',
+  resetItinerary: 'Restablecer itinerario original',
+  resetConfirm: '¿Descartar TODOS tus cambios y restaurar el plan original?',
+  exportItinerary: 'Exportar itinerario (JSON)',
+  importItinerary: 'Importar itinerario (JSON)',
+  importConfirm: '¿Sustituir tus cambios actuales por el archivo importado?',
+  importError: 'Ese archivo no es una exportación válida del itinerario.',
+  greeting: 'Hola',
+  firstRunTitle: '¿Quién usa este teléfono?',
+  firstRunHint: 'Solo se usa para el saludo — puedes cambiarlo en Ajustes.',
+  nbaBadge: 'NBA',
+  nbaOffseason: 'Agosto = temporada baja NBA. Verifica horarios y stock de camisetas antes de ir.',
+};
+
+const DICTS: Record<Lang, typeof en> = { en, es };
+
+// Every valid string key, derived automatically from the dictionary.
+export type TKey = keyof typeof en;
+
+interface I18nValue {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: TKey) => string;
+}
+
+// React Context = a value made available to the whole component tree
+// without passing it through every function call.
+// Java analogy: a request-scoped bean injected wherever needed.
+const I18nContext = createContext<I18nValue | null>(null);
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  // Default language: English; the last choice is remembered (localStorage).
+  const [lang, setLang] = usePersistentState<Lang>('lang', 'en');
+  const t = (key: TKey) => DICTS[lang][key];
+  return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n(): I18nValue {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error('useI18n must be used inside <I18nProvider>');
+  return ctx;
+}
