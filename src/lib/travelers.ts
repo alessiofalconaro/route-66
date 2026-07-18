@@ -8,7 +8,7 @@ import { usePersistentState } from './storage';
 export const DEFAULT_TRAVELERS: Traveler[] = [
   { id: 't1', name: 'Falco' },
   { id: 't2', name: 'Jesse' },
-  { id: 't3', name: 'Traveler 3' },
+  { id: 't3', name: 'Geo' },
 ];
 
 export function useTravelers() {
