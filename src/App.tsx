@@ -9,6 +9,7 @@ import { useI18n, type TKey } from './i18n';
 import { useTravelers } from './lib/travelers';
 import { useHashRoute } from './lib/router';
 import { pullItinerary } from './lib/itinerarySync';
+import { pullState } from './lib/stateSync';
 import HomeView from './views/HomeView';
 import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
@@ -51,7 +52,8 @@ export default function App() {
   const [syncGen, setSyncGen] = useState(0);
   useEffect(() => {
     const sync = async () => {
-      if (await pullItinerary()) setSyncGen((n) => n + 1);
+      const [a, b] = await Promise.all([pullItinerary(), pullState()]);
+      if (a || b) setSyncGen((n) => n + 1);
     };
     void sync();
     const onVisible = () => {

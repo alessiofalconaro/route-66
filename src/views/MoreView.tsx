@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { useI18n, type TKey } from '../i18n';
 import { usePersistentState } from '../lib/storage';
+import { useSharedState, type ShopItem } from '../lib/stateSync';
 import type { Router } from '../lib/router';
 import ExpensesView from './ExpensesView';
 import SettingsView from './SettingsView';
@@ -82,46 +83,59 @@ export default function MoreView({ router }: { router: Router }) {
   );
 }
 
-// --- Shopping list: things to buy on arrival in Chicago (fully editable) ---
-// Default items reference an i18n key (so they follow the EN/ES toggle);
-// user-added items store their own free text.
-interface ShopItem {
-  id: string;
-  key?: TKey; // default item → translated live
-  label?: string; // custom item → fixed text
-}
-
-const DEFAULT_SHOPPING: ShopItem[] = [
-  'shop1', 'shop2', 'shop3', 'shop4', 'shop5',
-  'shop6', 'shop7', 'shop8', 'shop9', 'shop10',
-].map((k) => ({ id: k, key: k as TKey }));
-
+// --- Shopping list: things to buy on arrival in Chicago -------------------
+// SHARED across the three phones (state sync): items, checkmarks, order and
+// deletions all propagate. Default items reference an i18n key (so they
+// follow the EN/ES toggle); user-added items store their own free text.
 function ShoppingView() {
   const { t } = useI18n();
-  const [items, setItems] = usePersistentState<ShopItem[]>('shoppingItems', DEFAULT_SHOPPING);
-  const [done, setDone] = usePersistentState<string[]>('shopping', []);
+  const { state, update } = useSharedState();
   const [editing, setEditing] = useState(false);
   const [newText, setNewText] = useState('');
 
-  const labelOf = (it: ShopItem) => it.label ?? (it.key ? t(it.key) : '');
+  // Display order: the shared order list, with any unlisted items appended.
+  const byId = new Map(state.shopItems.map((i) => [i.id, i]));
+  const items = [
+    ...state.shopOrder.map((id) => byId.get(id)).filter((i): i is ShopItem => !!i),
+    ...state.shopItems.filter((i) => !state.shopOrder.includes(i.id)),
+  ];
+
+  const labelOf = (it: ShopItem) => it.label ?? (it.key ? t(it.key as TKey) : '');
+  const isDone = (id: string) => state.shopDone[id]?.v ?? false;
+
   const toggle = (id: string) =>
-    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
-  const remove = (id: string) => {
-    setItems((list) => list.filter((it) => it.id !== id));
-    setDone((d) => d.filter((x) => x !== id));
+    update((s) => ({
+      ...s,
+      shopDone: { ...s.shopDone, [id]: { v: !(s.shopDone[id]?.v ?? false), t: Date.now() } },
+    }));
+
+  const remove = (id: string) =>
+    update((s) => ({
+      ...s,
+      shopItems: s.shopItems.filter((it) => it.id !== id),
+      shopDeleted: [...s.shopDeleted, id],
+      shopOrder: s.shopOrder.filter((x) => x !== id),
+      shopOrderT: Date.now(),
+    }));
+
+  const move = (idx: number, dir: -1 | 1) => {
+    const target = idx + dir;
+    if (target < 0 || target >= items.length) return;
+    const order = items.map((i) => i.id);
+    [order[idx], order[target]] = [order[target], order[idx]];
+    update((s) => ({ ...s, shopOrder: order, shopOrderT: Date.now() }));
   };
-  const move = (idx: number, dir: -1 | 1) =>
-    setItems((list) => {
-      const target = idx + dir;
-      if (target < 0 || target >= list.length) return list;
-      const copy = [...list];
-      [copy[idx], copy[target]] = [copy[target], copy[idx]];
-      return copy;
-    });
+
   const add = () => {
     const text = newText.trim();
     if (!text) return;
-    setItems((list) => [...list, { id: `s-${crypto.randomUUID()}`, label: text }]);
+    const id = `s-${crypto.randomUUID()}`;
+    update((s) => ({
+      ...s,
+      shopItems: [...s.shopItems, { id, label: text }],
+      shopOrder: [...items.map((i) => i.id), id],
+      shopOrderT: Date.now(),
+    }));
     setNewText('');
   };
 
@@ -149,13 +163,13 @@ function ShoppingView() {
         >
           <input
             type="checkbox"
-            checked={done.includes(it.id)}
+            checked={isDone(it.id)}
             onChange={() => toggle(it.id)}
             className="w-5 h-5 accent-red-700 shrink-0"
           />
           <span
             className={`flex-1 min-w-0 ${
-              done.includes(it.id) ? 'line-through text-stone-400' : ''
+              isDone(it.id) ? 'line-through text-stone-400' : ''
             }`}
           >
             {labelOf(it)}

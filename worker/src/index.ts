@@ -209,6 +209,110 @@ async function handleItinerary(
   return json(405, { error: 'method_not_allowed' });
 }
 
+// --- shared state sync (GET/PUT /state) -------------------------------------
+// Shopping list + "seen it" checkmarks, shared by all three phones.
+// Items merge by id with tombstones; checkmarks and the list order use
+// per-entry timestamps so an UNcheck propagates too (union alone couldn't).
+interface Mark {
+  v: boolean;
+  t: number;
+}
+
+interface SharedState {
+  shopItems: { id: string }[];
+  shopDeleted: string[];
+  shopOrder: string[];
+  shopOrderT: number;
+  shopDone: Record<string, Mark>;
+  visited: Record<string, Mark>;
+  updatedAt: number;
+}
+
+const EMPTY_STATE: SharedState = {
+  shopItems: [],
+  shopDeleted: [],
+  shopOrder: [],
+  shopOrderT: 0,
+  shopDone: {},
+  visited: {},
+  updatedAt: 0,
+};
+
+function validState(body: unknown): body is SharedState {
+  if (typeof body !== 'object' || body === null) return false;
+  const b = body as Record<string, unknown>;
+  return (
+    Array.isArray(b.shopItems) && b.shopItems.length <= 500 &&
+    Array.isArray(b.shopDeleted) && b.shopDeleted.length <= 2000 &&
+    Array.isArray(b.shopOrder) &&
+    typeof b.shopOrderT === 'number' &&
+    typeof b.shopDone === 'object' && b.shopDone !== null &&
+    typeof b.visited === 'object' && b.visited !== null &&
+    typeof b.updatedAt === 'number'
+  );
+}
+
+function mergeMarks(a: Record<string, Mark>, b: Record<string, Mark>): Record<string, Mark> {
+  const out = { ...a };
+  for (const [k, m] of Object.entries(b)) {
+    if (!out[k] || m.t > out[k].t) out[k] = m; // newest toggle wins per entry
+  }
+  return out;
+}
+
+function mergeState(stored: SharedState, incoming: SharedState): SharedState {
+  const deleted = new Set([...stored.shopDeleted, ...incoming.shopDeleted]);
+  const byId = new Map(stored.shopItems.map((i) => [i.id, i]));
+  for (const i of incoming.shopItems) byId.set(i.id, i);
+  const newerOrder = incoming.shopOrderT >= stored.shopOrderT ? incoming : stored;
+  return {
+    shopItems: [...byId.values()].filter((i) => !deleted.has(i.id)),
+    shopDeleted: [...deleted].slice(-2000),
+    shopOrder: newerOrder.shopOrder,
+    shopOrderT: newerOrder.shopOrderT,
+    shopDone: mergeMarks(stored.shopDone, incoming.shopDone),
+    visited: mergeMarks(stored.visited, incoming.visited),
+    updatedAt: Date.now(),
+  };
+}
+
+async function handleState(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const json = (status: number, data: unknown) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (!env.TRIP_PIN) return json(503, { error: 'sync_not_configured' });
+  if (request.headers.get('X-Trip-Pin') !== env.TRIP_PIN) return json(401, { error: 'bad_pin' });
+
+  if (request.method === 'GET') {
+    const raw = await env.EXPENSES.get('shared-state');
+    return json(200, raw ? (JSON.parse(raw) as SharedState) : EMPTY_STATE);
+  }
+
+  if (request.method === 'PUT') {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json(400, { error: 'bad_json' });
+    }
+    if (!validState(body)) return json(400, { error: 'bad_request' });
+    const raw = await env.EXPENSES.get('shared-state');
+    const stored = raw ? (JSON.parse(raw) as SharedState) : EMPTY_STATE;
+    const merged = mergeState(stored, body);
+    await env.EXPENSES.put('shared-state', JSON.stringify(merged));
+    return json(200, merged);
+  }
+
+  return json(405, { error: 'method_not_allowed' });
+}
+
 /** Reads the stored snapshot, tolerating the older shape without deletedIds. */
 async function readSnapshot(env: Env): Promise<Snapshot> {
   const raw = await env.EXPENSES.get('shared-expenses');
@@ -295,6 +399,7 @@ export default {
     const pathname = new URL(request.url).pathname;
     if (pathname === '/expenses') return handleExpenses(request, env, cors);
     if (pathname === '/itinerary') return handleItinerary(request, env, cors);
+    if (pathname === '/state') return handleState(request, env, cors);
 
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers: cors });
