@@ -1,6 +1,7 @@
 // City view for overnight cities WITHOUT a dedicated segment (e.g. Tulsa):
 // aggregates the hotel + every POI across all segments whose city matches.
 // Read-only by design — those POIs are edited on their own leg.
+import { useState } from 'react';
 import { CITY_SEGMENT, HOTELS, SEGMENTS, segmentById } from '../data/tripData';
 import { mergePois, useOverrides } from '../lib/overrides';
 import { useVisited } from '../lib/visited';
@@ -14,6 +15,7 @@ export default function CityView({ cityId }: { cityId: string }) {
   const { t } = useI18n();
   const { overrides } = useOverrides();
   const { isVisited, toggleVisited } = useVisited();
+  const [sortToSee, setSortToSee] = useState(false);
 
   // Chicago, Springdale (Zion day) and LA have full segments — reuse them.
   const dedicated = segmentById(CITY_SEGMENT[cityId]);
@@ -47,14 +49,32 @@ export default function CityView({ cityId }: { cityId: string }) {
       {pois.length === 0 ? (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('emptyCityHint')}</p>
       ) : (
-        pois.map((p) => (
-          <PoiCard
-            key={p.id}
-            poi={p}
-            visited={isVisited(p.id)}
-            onToggleVisited={() => toggleVisited(p.id)}
-          />
-        ))
+        <>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-stone-500 dark:text-stone-400">
+              ✓ {pois.filter((p) => isVisited(p.id)).length}/{pois.length}
+            </span>
+            <button
+              onClick={() => setSortToSee((s) => !s)}
+              className={`text-xs font-medium rounded-lg px-2.5 py-1 ${
+                sortToSee ? 'bg-green-600 text-white' : 'bg-stone-200 dark:bg-stone-700'
+              }`}
+            >
+              👀 {t('sortToSee')}
+            </button>
+          </div>
+          {(sortToSee
+            ? [...pois].sort((a, b) => Number(isVisited(a.id)) - Number(isVisited(b.id)))
+            : pois
+          ).map((p) => (
+            <PoiCard
+              key={p.id}
+              poi={p}
+              visited={isVisited(p.id)}
+              onToggleVisited={() => toggleVisited(p.id)}
+            />
+          ))}
+        </>
       )}
     </div>
   );

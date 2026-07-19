@@ -25,6 +25,7 @@ const DEFAULT_CATEGORIES: { value: string; labelKey: TKey; emoji: string }[] = [
   { value: 'food', labelKey: 'catFood', emoji: '🍔' },
   { value: 'tickets', labelKey: 'catTickets', emoji: '🎟️' },
   { value: 'souvenirs', labelKey: 'catSouvenirs', emoji: '🛍️' },
+  { value: 'laundry', labelKey: 'catLaundry', emoji: '🧺' },
   { value: 'other', labelKey: 'catOther', emoji: '📦' },
 ];
 

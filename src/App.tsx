@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useI18n, type TKey } from './i18n';
 import { useTravelers } from './lib/travelers';
 import { useHashRoute } from './lib/router';
+import { pullItinerary } from './lib/itinerarySync';
 import HomeView from './views/HomeView';
 import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
@@ -43,6 +44,22 @@ export default function App() {
   useEffect(() => {
     if (router.route[0] === 'home') lastHomeRoute.current = router.route.join('/');
   }, [router.route]);
+
+  // Pull the shared itinerary once at startup (and whenever the app comes
+  // back to the foreground) so edits made by the others appear. Bumping
+  // syncGen remounts the views (key on <main>) so they re-read storage.
+  const [syncGen, setSyncGen] = useState(0);
+  useEffect(() => {
+    const sync = async () => {
+      if (await pullItinerary()) setSyncGen((n) => n + 1);
+    };
+    void sync();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void sync();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
 
   /** Dock tap. Active tab: first tap pops back to the tab's root (e.g. the
    *  More menu from a sub-section), tap again to scroll to top. Other tab:
@@ -148,6 +165,7 @@ export default function App() {
       {/* THE only scrolling element (document scroll is locked in index.css).
           Bottom padding clears the dock; content scrolls under the glass. */}
       <main
+        key={syncGen}
         ref={mainRef}
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-32"
       >

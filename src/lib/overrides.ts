@@ -4,9 +4,16 @@
 import { useCallback } from 'react';
 import type { Poi, Segment, UserOverrides } from '../types';
 import { EMPTY_OVERRIDES } from '../types';
-import { usePersistentState } from './storage';
+import { saveJson, usePersistentState } from './storage';
+import { scheduleItineraryPush } from './itinerarySync';
 
 const KEY = 'overrides';
+
+/** Marks the itinerary as changed and schedules a background sync push. */
+function touchAndSync(): void {
+  saveJson('overridesUpdatedAt', Date.now());
+  scheduleItineraryPush();
+}
 
 /** Applies the user's edits to one segment's POI list. */
 export function mergePois(segment: Segment, ov: UserOverrides): Poi[] {
@@ -44,26 +51,32 @@ export function useOverrides() {
   const [overrides, setOverrides] = usePersistentState<UserOverrides>(KEY, EMPTY_OVERRIDES);
 
   const removePoi = useCallback(
-    (poiId: string) =>
-      setOverrides((ov) => ({ ...ov, removedPoiIds: [...ov.removedPoiIds, poiId] })),
+    (poiId: string) => {
+      setOverrides((ov) => ({ ...ov, removedPoiIds: [...ov.removedPoiIds, poiId] }));
+      touchAndSync();
+    },
     [setOverrides],
   );
 
   const editPoi = useCallback(
-    (poiId: string, changes: Partial<Poi>) =>
+    (poiId: string, changes: Partial<Poi>) => {
       setOverrides((ov) => ({
         ...ov,
         editedPois: { ...ov.editedPois, [poiId]: { ...ov.editedPois[poiId], ...changes } },
-      })),
+      }));
+      touchAndSync();
+    },
     [setOverrides],
   );
 
   const addPoi = useCallback(
-    (segmentId: string, poi: Poi) =>
+    (segmentId: string, poi: Poi) => {
       setOverrides((ov) => ({
         ...ov,
         addedPois: { ...ov.addedPois, [segmentId]: [...(ov.addedPois[segmentId] ?? []), poi] },
-      })),
+      }));
+      touchAndSync();
+    },
     [setOverrides],
   );
 
@@ -80,11 +93,17 @@ export function useOverrides() {
         ...prev,
         poiOrder: { ...prev.poiOrder, [segment.id]: current },
       }));
+      touchAndSync();
     },
     [setOverrides],
   );
 
-  const resetAll = useCallback(() => setOverrides(EMPTY_OVERRIDES), [setOverrides]);
+  const resetAll = useCallback(() => {
+    setOverrides(EMPTY_OVERRIDES);
+    // resetAt makes the reset win over any merge (see itinerarySync)
+    saveJson('overridesResetAt', Date.now());
+    touchAndSync();
+  }, [setOverrides]);
 
   return { overrides, setOverrides, removePoi, editPoi, addPoi, movePoi, resetAll };
 }

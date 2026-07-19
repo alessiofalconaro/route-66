@@ -1,12 +1,14 @@
-// Settings: language, travelers (rename), who-am-I, album URL,
-// itinerary reset / export / import (JSON file sharing between the three phones).
-import { useRef } from 'react';
+// Settings: language, theme, travelers, album URL, trip PIN (with live
+// verification), custom-category manager, itinerary reset/export/import.
+import { useEffect, useRef, useState } from 'react';
 import { useI18n, type Lang } from '../i18n';
 import { useTheme, type Theme } from '../lib/theme';
 import { useTravelers } from '../lib/travelers';
-import { usePersistentState } from '../lib/storage';
+import { loadJson, saveJson, usePersistentState } from '../lib/storage';
 import { useOverrides } from '../lib/overrides';
-import type { UserOverrides } from '../types';
+import { pullShared, pushShared } from '../lib/expenseSync';
+import { scheduleItineraryPush } from '../lib/itinerarySync';
+import { EMPTY_OVERRIDES, type Expense, type UserOverrides } from '../types';
 
 export default function SettingsView() {
   const { t, lang, setLang } = useI18n();
@@ -14,6 +16,25 @@ export default function SettingsView() {
   const { travelers, rename, whoAmI, setWhoAmI } = useTravelers();
   const [albumUrl, setAlbumUrl] = usePersistentState<string>('albumUrl', '');
   const [tripPin, setTripPin] = usePersistentState<string>('tripPin', '');
+  // Live PIN verification: a debounced GET to the sync endpoint tells the
+  // user right away whether the PIN they typed is the right one.
+  const [pinStatus, setPinStatus] = useState<'idle' | 'checking' | 'ok' | 'bad'>('idle');
+  useEffect(() => {
+    if (!tripPin.trim()) {
+      setPinStatus('idle');
+      return;
+    }
+    setPinStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        await pullShared(tripPin);
+        setPinStatus('ok');
+      } catch (err) {
+        setPinStatus(err instanceof Error && err.message.includes('401') ? 'bad' : 'idle');
+      }
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [tripPin]);
   const { overrides, setOverrides, resetAll } = useOverrides();
   // useRef = a stable reference to a DOM element (the hidden file input).
   const fileInput = useRef<HTMLInputElement>(null);
@@ -141,7 +162,18 @@ export default function SettingsView() {
           onChange={(e) => setTripPin(e.target.value)}
         />
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('tripPinHint')}</p>
+        {pinStatus === 'checking' && (
+          <p className="text-xs text-stone-500 dark:text-stone-400">⏳ {t('pinChecking')}</p>
+        )}
+        {pinStatus === 'ok' && (
+          <p className="text-xs font-medium text-green-700 dark:text-green-400">✅ {t('pinOk')}</p>
+        )}
+        {pinStatus === 'bad' && (
+          <p className="text-xs font-medium text-red-700 dark:text-red-400">❌ {t('pinBad')}</p>
+        )}
       </div>
+
+      <CategoryManager />
 
       {/* Itinerary data management */}
       <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
@@ -170,6 +202,111 @@ export default function SettingsView() {
           🔄 {t('resetItinerary')}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Custom-category manager: rename or delete the categories the user created
+// (the translated defaults are not editable). Renaming also updates every
+// record using the old name — locally AND across phones via the sync.
+// ---------------------------------------------------------------------------
+function CategoryManager() {
+  const { t } = useI18n();
+  const [expCats, setExpCats] = usePersistentState<string[]>('customCategories', []);
+  const [poiCats, setPoiCats] = usePersistentState<string[]>('customPoiCategories', []);
+  const [pin] = usePersistentState<string>('tripPin', '');
+
+  const renameExpenseCat = (oldName: string) => {
+    const name = window.prompt(t('renamePrompt'), oldName)?.trim();
+    if (!name || name === oldName) return;
+    setExpCats((list) => list.map((c) => (c === oldName ? name : c)));
+    // Rewrite existing records so old entries follow the rename.
+    const shared = loadJson<Expense[]>('expenses', []).map((e) =>
+      e.category === oldName ? { ...e, category: name } : e,
+    );
+    saveJson('expenses', shared);
+    saveJson(
+      'personalExpenses',
+      loadJson<{ category: string }[]>('personalExpenses', []).map((e) =>
+        e.category === oldName ? { ...e, category: name } : e,
+      ),
+    );
+    saveJson('expensesUpdatedAt', Date.now());
+    // Sync: the server merge is per-id with incoming winning, so the renamed
+    // shared expenses replace the old copies on every phone.
+    if (pin.trim()) {
+      void pushShared(
+        {
+          expenses: shared,
+          deletedIds: loadJson<string[]>('expensesDeletedIds', []),
+          updatedAt: Date.now(),
+        },
+        pin,
+      ).catch(() => {});
+    }
+  };
+
+  const renamePoiCat = (oldName: string) => {
+    const name = window.prompt(t('renamePrompt'), oldName)?.trim();
+    if (!name || name === oldName) return;
+    setPoiCats((list) => list.map((c) => (c === oldName ? name : c)));
+    const ov = loadJson<UserOverrides>('overrides', EMPTY_OVERRIDES);
+    const renamed: UserOverrides = {
+      ...ov,
+      editedPois: Object.fromEntries(
+        Object.entries(ov.editedPois).map(([id, p]) => [
+          id,
+          p.category === oldName ? { ...p, category: name } : p,
+        ]),
+      ),
+      addedPois: Object.fromEntries(
+        Object.entries(ov.addedPois).map(([segId, pois]) => [
+          segId,
+          pois.map((p) => (p.category === oldName ? { ...p, category: name } : p)),
+        ]),
+      ),
+    };
+    saveJson('overrides', renamed);
+    saveJson('overridesUpdatedAt', Date.now());
+    scheduleItineraryPush();
+  };
+
+  const chipRow = (
+    cats: string[],
+    onRename: (name: string) => void,
+    onDelete: (name: string) => void,
+  ) =>
+    cats.length === 0 ? (
+      <p className="text-xs text-stone-500 dark:text-stone-400">{t('categoriesNone')}</p>
+    ) : (
+      cats.map((c) => (
+        <div key={c} className="flex items-center gap-2 text-sm py-1">
+          <span className="flex-1 min-w-0 truncate">{c}</span>
+          <button onClick={() => onRename(c)} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700">
+            ✏️
+          </button>
+          <button
+            onClick={() => onDelete(c)}
+            className="px-2 py-1 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300"
+          >
+            🗑️
+          </button>
+        </div>
+      ))
+    );
+
+  return (
+    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+      <h3 className="font-semibold text-sm">🏷️ {t('categoriesTitle')}</h3>
+      <p className="text-xs font-medium text-stone-500 dark:text-stone-400">
+        {t('categoriesExpenses')}
+      </p>
+      {chipRow(expCats, renameExpenseCat, (c) => setExpCats((l) => l.filter((x) => x !== c)))}
+      <p className="text-xs font-medium text-stone-500 dark:text-stone-400 pt-1">
+        {t('categoriesPois')}
+      </p>
+      {chipRow(poiCats, renamePoiCat, (c) => setPoiCats((l) => l.filter((x) => x !== c)))}
     </div>
   );
 }

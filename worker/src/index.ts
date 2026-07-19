@@ -111,6 +111,102 @@ function validSnapshot(body: unknown): body is Snapshot {
   });
 }
 
+// --- itinerary sync (GET/PUT /itinerary) ------------------------------------
+// The user-edited itinerary (added/edited/removed stops, custom order, photos
+// as data-URLs) shared across the three phones. Merge on PUT; a client that
+// performed "reset to default" sends a newer resetAt and wins wholesale.
+interface ItinerarySnapshot {
+  overrides: {
+    removedPoiIds: string[];
+    editedPois: Record<string, unknown>;
+    addedPois: Record<string, unknown[]>;
+    poiOrder: Record<string, string[]>;
+  };
+  updatedAt: number;
+  resetAt: number;
+}
+
+function validItinerary(body: unknown): body is ItinerarySnapshot {
+  if (typeof body !== 'object' || body === null) return false;
+  const b = body as Record<string, unknown>;
+  if (typeof b.updatedAt !== 'number' || typeof b.resetAt !== 'number') return false;
+  const o = b.overrides as Record<string, unknown> | undefined;
+  return (
+    typeof o === 'object' && o !== null &&
+    Array.isArray(o.removedPoiIds) &&
+    typeof o.editedPois === 'object' && o.editedPois !== null &&
+    typeof o.addedPois === 'object' && o.addedPois !== null &&
+    typeof o.poiOrder === 'object' && o.poiOrder !== null
+  );
+}
+
+const EMPTY_ITINERARY: ItinerarySnapshot = {
+  overrides: { removedPoiIds: [], editedPois: {}, addedPois: {}, poiOrder: {} },
+  updatedAt: 0,
+  resetAt: 0,
+};
+
+function mergeItinerary(stored: ItinerarySnapshot, incoming: ItinerarySnapshot): ItinerarySnapshot {
+  // A fresher "reset to default" wipes the slate on purpose.
+  if (incoming.resetAt > stored.resetAt) return { ...incoming, updatedAt: Date.now() };
+  // Merge added POIs per segment by poi id (incoming wins per id).
+  const addedPois: Record<string, unknown[]> = { ...stored.overrides.addedPois };
+  for (const [segId, pois] of Object.entries(incoming.overrides.addedPois)) {
+    const byId = new Map((addedPois[segId] ?? []).map((p) => [(p as { id: string }).id, p]));
+    for (const p of pois) byId.set((p as { id: string }).id, p);
+    addedPois[segId] = [...byId.values()];
+  }
+  return {
+    overrides: {
+      removedPoiIds: [...new Set([...stored.overrides.removedPoiIds, ...incoming.overrides.removedPoiIds])],
+      editedPois: { ...stored.overrides.editedPois, ...incoming.overrides.editedPois },
+      addedPois,
+      poiOrder: { ...stored.overrides.poiOrder, ...incoming.overrides.poiOrder },
+    },
+    updatedAt: Date.now(),
+    resetAt: Math.max(stored.resetAt, incoming.resetAt),
+  };
+}
+
+async function handleItinerary(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const json = (status: number, data: unknown) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (!env.TRIP_PIN) return json(503, { error: 'sync_not_configured' });
+  if (request.headers.get('X-Trip-Pin') !== env.TRIP_PIN) return json(401, { error: 'bad_pin' });
+
+  if (request.method === 'GET') {
+    const raw = await env.EXPENSES.get('itinerary');
+    return json(200, raw ? (JSON.parse(raw) as ItinerarySnapshot) : EMPTY_ITINERARY);
+  }
+
+  if (request.method === 'PUT') {
+    const text = await request.text();
+    if (text.length > 8 * 1024 * 1024) return json(413, { error: 'too_large' });
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return json(400, { error: 'bad_json' });
+    }
+    if (!validItinerary(body)) return json(400, { error: 'bad_request' });
+    const raw = await env.EXPENSES.get('itinerary');
+    const stored = raw ? (JSON.parse(raw) as ItinerarySnapshot) : EMPTY_ITINERARY;
+    const merged = mergeItinerary(stored, body);
+    await env.EXPENSES.put('itinerary', JSON.stringify(merged));
+    return json(200, merged);
+  }
+
+  return json(405, { error: 'method_not_allowed' });
+}
+
 /** Reads the stored snapshot, tolerating the older shape without deletedIds. */
 async function readSnapshot(env: Env): Promise<Snapshot> {
   const raw = await env.EXPENSES.get('shared-expenses');
@@ -193,10 +289,10 @@ export default {
       });
     }
 
-    // Expense sync lives on /expenses; everything else is the chat proxy.
-    if (new URL(request.url).pathname === '/expenses') {
-      return handleExpenses(request, env, cors);
-    }
+    // Sync endpoints; everything else is the chat proxy.
+    const pathname = new URL(request.url).pathname;
+    if (pathname === '/expenses') return handleExpenses(request, env, cors);
+    if (pathname === '/itinerary') return handleItinerary(request, env, cors);
 
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405, headers: cors });
@@ -226,12 +322,15 @@ export default {
       `The travelers are currently on this part of the trip: "${body.segmentLabel}". ` +
       `Suggest sights, food and quick stops near that area. Keep answers short ` +
       `(under 200 words), no markdown tables. Answer in ${langName}. ` +
-      `ACCURACY RULES: never invent attractions, addresses, filming locations, ` +
-      `opening hours or prices. If you are not certain something exists or is ` +
-      `really located where the user asks, say you are not sure instead of ` +
-      `guessing, and recommend verifying on the spot. Movie/TV filming ` +
-      `locations are a common trap: only mention ones you are confident about, ` +
-      `including the real city they are in.`;
+      `ACCURACY RULES: answer factual questions (movies, TV shows, filming ` +
+      `locations, history, sports) directly and confidently from your ` +
+      `knowledge — that is your job; never tell the user to "search online" ` +
+      `or "check when you arrive" as a substitute for an answer you know. ` +
+      `At the same time, never INVENT specifics: if a place/location does not ` +
+      `exist or is in a different city than the user assumes, say so plainly ` +
+      `and give the correct fact (e.g. a show set in one city but filmed in ` +
+      `another). Only for volatile details (opening hours, prices, temporary ` +
+      `closures) add a short note that they can change.`;
 
     // Call Groq (OpenAI-compatible API). The key exists ONLY here.
     // Try the strongest free model first, fall back if it's unavailable.

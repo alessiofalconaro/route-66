@@ -16,6 +16,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
   const { overrides, removePoi, editPoi, addPoi, movePoi } = useOverrides();
   const { isVisited, toggleVisited } = useVisited();
   const [editing, setEditing] = useState(false);
+  const [sortToSee, setSortToSee] = useState(false);
   // Which POI is being edited in the modal; 'new' = adding a new one.
   const [modal, setModal] = useState<Poi | 'new' | null>(null);
 
@@ -51,11 +52,31 @@ export default function SegmentView({ segment }: { segment: Segment }) {
         </div>
       )}
 
+      {/* Seen counter + "to-see first" sorting */}
+      {pois.length > 0 && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-stone-500 dark:text-stone-400">
+            ✓ {pois.filter((p) => isVisited(p.id)).length}/{pois.length}
+          </span>
+          <button
+            onClick={() => setSortToSee((s) => !s)}
+            className={`text-xs font-medium rounded-lg px-2.5 py-1 ${
+              sortToSee ? 'bg-green-600 text-white' : 'bg-stone-200 dark:bg-stone-700'
+            }`}
+          >
+            👀 {t('sortToSee')}
+          </button>
+        </div>
+      )}
+
       {/* POI list */}
       {pois.length === 0 && (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('noPois')}</p>
       )}
-      {pois.map((p) => (
+      {(sortToSee
+        ? [...pois].sort((a, b) => Number(isVisited(a.id)) - Number(isVisited(b.id)))
+        : pois
+      ).map((p) => (
         <PoiCard
           key={p.id}
           poi={p}
