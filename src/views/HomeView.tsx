@@ -3,6 +3,7 @@
 // back gesture returns from a city/leg view to the pickers.
 import { useEffect, useState } from 'react';
 import { CITIES, LEGS, segmentById } from '../data/tripData';
+import { dayForDate, todayIso, TRIP_START } from '../data/days';
 import { detectNearestCity } from '../lib/geo';
 import type { Router } from '../lib/router';
 import { useI18n } from '../i18n';
@@ -12,6 +13,42 @@ import SegmentView from '../components/SegmentView';
 // If the nearest overnight stop is farther than this, the user is simply not
 // on the route yet (e.g. still at home in Europe) — suggesting it would be wrong.
 const FAR_KM = 250;
+
+/** One line inside the red header: countdown before the trip, "Today: …"
+ *  with a shortcut to today's city/leg during the trip. */
+function HomeStatusLine({
+  onOpenToday,
+}: {
+  onOpenToday: (mode: string, id: string) => void;
+}) {
+  const { t } = useI18n();
+  const today = todayIso();
+  const daysToStart = Math.ceil(
+    (new Date(TRIP_START + 'T00:00:00').getTime() - new Date(today + 'T00:00:00').getTime()) /
+      86400000,
+  );
+  if (daysToStart > 0) {
+    return (
+      <p className="mt-2 text-sm font-semibold bg-red-900/50 rounded-lg px-3 py-1.5 inline-block">
+        🚗 {daysToStart} {t('daysToGo')}
+      </p>
+    );
+  }
+  const day = dayForDate(today);
+  if (!day) return null; // trip is over
+  const label =
+    day.mode === 'leg'
+      ? segmentById(day.id)?.label
+      : CITIES.find((c) => c.id === day.id)?.label;
+  return (
+    <button
+      onClick={() => onOpenToday(day.mode, day.id)}
+      className="mt-2 text-sm font-semibold bg-red-900/50 rounded-lg px-3 py-1.5 text-left w-full"
+    >
+      📅 {t('todayLabel')}: {label} ›
+    </button>
+  );
+}
 
 export default function HomeView({ router }: { router: Router }) {
   const { t } = useI18n();
@@ -54,6 +91,9 @@ export default function HomeView({ router }: { router: Router }) {
       <div className="rounded-2xl bg-red-700 text-white p-4">
         <h1 className="text-xl font-bold">{t('tripTitle')}</h1>
         <p className="text-sm opacity-90">{t('tripDates')}</p>
+        <HomeStatusLine
+          onOpenToday={(mode, id) => router.navigate(`home/${mode}/${id}`)}
+        />
       </div>
 
       <div className="rounded-2xl bg-white dark:bg-stone-900 shadow-sm p-4 space-y-3">

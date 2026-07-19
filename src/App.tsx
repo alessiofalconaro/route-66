@@ -9,15 +9,17 @@ import { useI18n, type TKey } from './i18n';
 import { useTravelers } from './lib/travelers';
 import { useHashRoute } from './lib/router';
 import HomeView from './views/HomeView';
+import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
 import FuelView from './views/FuelView';
 import ChatView from './views/ChatView';
 import MoreView from './views/MoreView';
 
-type Tab = 'home' | 'hotels' | 'fuel' | 'chat' | 'more';
+type Tab = 'home' | 'trip' | 'hotels' | 'fuel' | 'chat' | 'more';
 
 const TABS: { id: Tab; icon: string; labelKey: TKey }[] = [
   { id: 'home', icon: '🏠', labelKey: 'navHome' },
+  { id: 'trip', icon: '📅', labelKey: 'navTrip' },
   { id: 'hotels', icon: '🛏️', labelKey: 'navHotels' },
   { id: 'fuel', icon: '⛽', labelKey: 'navFuel' },
   { id: 'chat', icon: '🤖', labelKey: 'navChat' },
@@ -148,6 +150,7 @@ export default function App() {
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-32"
       >
         {tab === 'home' && <HomeView router={router} />}
+        {tab === 'trip' && <TripView router={router} />}
         {tab === 'hotels' && <HotelsView />}
         {tab === 'fuel' && <FuelView />}
         {tab === 'chat' && <ChatView />}

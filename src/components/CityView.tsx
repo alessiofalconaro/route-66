@@ -6,6 +6,7 @@ import { mergePois, useOverrides } from '../lib/overrides';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
 import HotelCard from './HotelCard';
+import LocalInfoCard from './LocalInfoCard';
 import SegmentView from './SegmentView';
 
 export default function CityView({ cityId }: { cityId: string }) {
@@ -14,7 +15,14 @@ export default function CityView({ cityId }: { cityId: string }) {
 
   // Chicago, Springdale (Zion day) and LA have full segments — reuse them.
   const dedicated = segmentById(CITY_SEGMENT[cityId]);
-  if (dedicated) return <SegmentView segment={dedicated} />;
+  if (dedicated) {
+    return (
+      <div className="space-y-3">
+        <LocalInfoCard cityId={cityId} />
+        <SegmentView segment={dedicated} />
+      </div>
+    );
+  }
 
   const hotel = HOTELS.find((h) => h.id === cityId);
   if (!hotel) return null;
@@ -32,6 +40,7 @@ export default function CityView({ cityId }: { cityId: string }) {
         <h2 className="text-lg font-bold leading-tight">{hotel.city}</h2>
         <p className="text-xs text-stone-500 dark:text-stone-400">{hotel.nights}</p>
       </div>
+      <LocalInfoCard cityId={cityId} />
       <HotelCard hotel={hotel} />
       {pois.length === 0 ? (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('emptyCityHint')}</p>

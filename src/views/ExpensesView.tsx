@@ -1,6 +1,7 @@
 // Expense splitter — single writer (Falco's device), proportional shares.
 import { useState } from 'react';
 import type { Expense } from '../types';
+import { FUEL_TOTAL_USD } from '../data/tripData';
 import { usePersistentState } from '../lib/storage';
 import { useTravelers } from '../lib/travelers';
 import { fmtUsd, netBalances, settlements } from '../lib/expenses';
@@ -59,6 +60,17 @@ export default function ExpensesView() {
   const net = netBalances(expenses, travelers);
   const pays = settlements(net);
 
+  // --- summary stats ---
+  const total = expenses.reduce((s, e) => s + e.amountUsd, 0);
+  const byCategory = CATEGORIES.map((c) => ({
+    ...c,
+    sum: expenses.filter((e) => e.category === c.value).reduce((s, e) => s + e.amountUsd, 0),
+  }))
+    .filter((c) => c.sum > 0)
+    .sort((a, b) => b.sum - a.sum);
+  const fuelSum = byCategory.find((c) => c.value === 'fuel')?.sum ?? 0;
+  const fuelPct = Math.min(100, Math.round((fuelSum / FUEL_TOTAL_USD) * 100));
+
   const input =
     'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm';
 
@@ -66,6 +78,44 @@ export default function ExpensesView() {
     <div className="space-y-3">
       <h1 className="text-xl font-bold">💵 {t('expensesTitle')}</h1>
       <p className="text-xs text-stone-500 dark:text-stone-400">{t('expensesSingleWriter')}</p>
+
+      {/* Summary: total, fuel vs plan, by category */}
+      {expenses.length > 0 && (
+        <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+          <div className="flex justify-between items-baseline">
+            <h3 className="font-semibold text-sm">{t('expSummary')}</h3>
+            <span className="font-bold">{fmtUsd(total)}</span>
+          </div>
+          {/* fuel against the planned ~$349.40 */}
+          <div>
+            <div className="flex justify-between text-xs text-stone-500 dark:text-stone-400">
+              <span>⛽ {t('expFuelPlan')} (~${FUEL_TOTAL_USD.toFixed(0)})</span>
+              <span>
+                {fmtUsd(fuelSum)} · {fuelPct}%
+              </span>
+            </div>
+            <div className="mt-1 h-2 rounded-full bg-stone-200 dark:bg-stone-700">
+              <div className="h-2 rounded-full bg-red-700" style={{ width: `${fuelPct}%` }} />
+            </div>
+          </div>
+          {/* by category */}
+          <p className="text-xs text-stone-500 dark:text-stone-400 pt-1">{t('expByCategory')}</p>
+          {byCategory.map((c) => (
+            <div key={c.value}>
+              <div className="flex justify-between text-sm">
+                <span>{t(c.labelKey)}</span>
+                <span className="font-medium">{fmtUsd(c.sum)}</span>
+              </div>
+              <div className="mt-0.5 h-1.5 rounded-full bg-stone-200 dark:bg-stone-700">
+                <div
+                  className="h-1.5 rounded-full bg-stone-500 dark:bg-stone-400"
+                  style={{ width: `${Math.round((c.sum / total) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Net balances + who pays whom */}
       <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">

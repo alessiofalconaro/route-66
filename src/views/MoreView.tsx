@@ -23,6 +23,7 @@ export default function MoreView({ router }: { router: Router }) {
         </button>
         {sub === 'expenses' && <ExpensesView />}
         {sub === 'shopping' && <ShoppingView />}
+        {sub === 'tips' && <DrivingTipsView />}
         {sub === 'emergency' && <EmergencyView />}
         {sub === 'settings' && <SettingsView />}
       </div>
@@ -58,6 +59,9 @@ export default function MoreView({ router }: { router: Router }) {
       </button>
       <button onClick={() => router.navigate('more/shopping')} className={item}>
         🛒 {t('shoppingTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/tips')} className={item}>
+        🚘 {t('drivingTipsTitle')}
       </button>
       <button onClick={() => router.navigate('more/emergency')} className={item}>
         🚨 {t('emergencyTitle')}
@@ -186,6 +190,22 @@ function ShoppingView() {
           ＋
         </button>
       </div>
+    </div>
+  );
+}
+
+// --- US driving tips for three Italians (static, offline) ---
+function DrivingTipsView() {
+  const { t } = useI18n();
+  const tips: TKey[] = ['tip1', 'tip2', 'tip3', 'tip4', 'tip5', 'tip6'];
+  return (
+    <div className="space-y-3">
+      <h1 className="text-xl font-bold">🚘 {t('drivingTipsTitle')}</h1>
+      {tips.map((k) => (
+        <div key={k} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 text-sm">
+          {t(k)}
+        </div>
+      ))}
     </div>
   );
 }
