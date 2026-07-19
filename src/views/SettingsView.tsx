@@ -164,7 +164,11 @@ export default function SettingsView() {
         <div className="flex gap-2">
           <input
             className={`${input} flex-1 disabled:opacity-60`}
-            type="text"
+            // password = shown as •••• while typing and when locked;
+            // inputMode/pattern = phones open the NUMERIC keypad only
+            type="password"
+            inputMode="numeric"
+            pattern="[0-9]*"
             autoComplete="off"
             value={tripPin}
             disabled={pinVerified}
