@@ -2,6 +2,7 @@
 // itinerary reset / export / import (JSON file sharing between the three phones).
 import { useRef } from 'react';
 import { useI18n, type Lang } from '../i18n';
+import { useTheme, type Theme } from '../lib/theme';
 import { useTravelers } from '../lib/travelers';
 import { usePersistentState } from '../lib/storage';
 import { useOverrides } from '../lib/overrides';
@@ -9,6 +10,7 @@ import type { UserOverrides } from '../types';
 
 export default function SettingsView() {
   const { t, lang, setLang } = useI18n();
+  const { theme, setTheme } = useTheme();
   const { travelers, rename, whoAmI, setWhoAmI } = useTravelers();
   const [albumUrl, setAlbumUrl] = usePersistentState<string>('albumUrl', '');
   const { overrides, setOverrides, resetAll } = useOverrides();
@@ -43,14 +45,15 @@ export default function SettingsView() {
     }
   };
 
-  const input = 'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm';
+  const input =
+    'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm';
 
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold">⚙️ {t('settingsTitle')}</h1>
 
       {/* Language */}
-      <div className="rounded-xl bg-white shadow-sm p-3">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
         <h3 className="font-semibold text-sm mb-2">{t('language')}</h3>
         <div className="flex gap-2">
           {(['en', 'es'] as Lang[]).map((l) => (
@@ -58,7 +61,7 @@ export default function SettingsView() {
               key={l}
               onClick={() => setLang(l)}
               className={`flex-1 rounded-lg py-2 text-sm font-medium ${
-                lang === l ? 'bg-red-700 text-white' : 'bg-stone-200'
+                lang === l ? 'bg-red-700 text-white' : 'bg-stone-200 dark:bg-stone-700'
               }`}
             >
               {l === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}
@@ -67,8 +70,34 @@ export default function SettingsView() {
         </div>
       </div>
 
+      {/* Theme */}
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
+        <h3 className="font-semibold text-sm mb-2">{t('theme')}</h3>
+        <div className="flex gap-2">
+          {(
+            [
+              { value: 'light', icon: '☀️', labelKey: 'themeLight' },
+              { value: 'dark', icon: '🌙', labelKey: 'themeDark' },
+              { value: 'system', icon: '📱', labelKey: 'themeSystem' },
+            ] as const
+          ).map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value as Theme)}
+              className={`flex-1 rounded-lg py-2 text-sm font-medium ${
+                theme === opt.value
+                  ? 'bg-red-700 text-white'
+                  : 'bg-stone-200 dark:bg-stone-700'
+              }`}
+            >
+              {opt.icon} {t(opt.labelKey)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Travelers (rename fixes typos on the spot; ids stay stable) */}
-      <div className="rounded-xl bg-white shadow-sm p-3 space-y-2">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
         <h3 className="font-semibold text-sm">{t('travelers')}</h3>
         {travelers.map((tr) => (
           <input
@@ -88,7 +117,7 @@ export default function SettingsView() {
       </div>
 
       {/* Shared album URL */}
-      <div className="rounded-xl bg-white shadow-sm p-3 space-y-1">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-1">
         <h3 className="font-semibold text-sm">{t('albumUrl')}</h3>
         <input
           className={input}
@@ -97,15 +126,15 @@ export default function SettingsView() {
           value={albumUrl}
           onChange={(e) => setAlbumUrl(e.target.value)}
         />
-        <p className="text-xs text-stone-500">{t('albumUrlHint')}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('albumUrlHint')}</p>
       </div>
 
       {/* Itinerary data management */}
-      <div className="rounded-xl bg-white shadow-sm p-3 space-y-2">
-        <button onClick={exportItinerary} className="w-full rounded-lg bg-stone-200 py-2 text-sm font-medium">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+        <button onClick={exportItinerary} className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium">
           ⬇️ {t('exportItinerary')}
         </button>
-        <button onClick={() => fileInput.current?.click()} className="w-full rounded-lg bg-stone-200 py-2 text-sm font-medium">
+        <button onClick={() => fileInput.current?.click()} className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium">
           ⬆️ {t('importItinerary')}
         </button>
         {/* hidden input; the button above triggers it */}
@@ -122,7 +151,7 @@ export default function SettingsView() {
         />
         <button
           onClick={() => confirm(t('resetConfirm')) && resetAll()}
-          className="w-full rounded-lg bg-red-100 text-red-700 py-2 text-sm font-medium"
+          className="w-full rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 py-2 text-sm font-medium"
         >
           🔄 {t('resetItinerary')}
         </button>

@@ -10,31 +10,33 @@ export default function FuelView() {
       <h1 className="text-xl font-bold">⛽ {t('fuelTitle')}</h1>
 
       {/* The three key warnings, always visible */}
-      <div className="rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-sm p-3 space-y-1">
+      <div className="rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3 space-y-1">
         <p>⚠️ {t('fuelWarnCA')}</p>
         <p>💰 {t('fuelWarnMO')}</p>
         <p>🏜️ {t('fuelWarnQuarter')}</p>
       </div>
 
-      <div className="rounded-xl bg-white shadow-sm p-3 text-sm">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 text-sm">
         <span className="font-semibold">{t('fuelTotal')}:</span> ~${FUEL_TOTAL_USD.toFixed(2)} (
         {t('splitThreeWays')}: ${(FUEL_TOTAL_USD / 3).toFixed(2)})
       </div>
 
       {ALL_FUEL_STOPS.map((f, i) => (
-        <div key={i} className="rounded-xl bg-white shadow-sm p-3">
+        <div key={i} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="font-semibold text-sm">
               {i + 1}. {f.station}
             </h3>
             <span className="text-sm font-bold">${f.amountUsd.toFixed(2)}</span>
           </div>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {f.address} · ${f.pricePerGal.toFixed(2)}{t('perGal')} · {f.fillGal.toFixed(1)} {t('gallons')}
             {' · '}
             {segmentById(f.segmentId)?.label}
           </p>
-          {f.warning && <p className="text-xs text-amber-700 mt-1">{f.warning}</p>}
+          {f.warning && (
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">{f.warning}</p>
+          )}
           <a
             href={mapsUrl(`${f.station} ${f.address}`)}
             target="_blank"

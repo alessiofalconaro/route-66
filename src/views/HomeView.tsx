@@ -28,7 +28,8 @@ export default function HomeView() {
     }
   };
 
-  const select = 'w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm';
+  const select =
+    'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm';
 
   return (
     <div className="space-y-4">
@@ -37,7 +38,7 @@ export default function HomeView() {
         <p className="text-sm opacity-90">{t('tripDates')}</p>
       </div>
 
-      <div className="rounded-2xl bg-white shadow-sm p-4 space-y-3">
+      <div className="rounded-2xl bg-white dark:bg-stone-900 shadow-sm p-4 space-y-3">
         <h2 className="font-bold">{t('whereAreWe')}</h2>
 
         <label className="block text-sm font-medium">
@@ -71,11 +72,13 @@ export default function HomeView() {
         <button
           onClick={useLocation}
           disabled={locating}
-          className="w-full rounded-lg bg-stone-800 text-white py-2.5 text-sm font-medium disabled:opacity-60"
+          className="w-full rounded-lg bg-stone-800 dark:bg-stone-700 text-white py-2.5 text-sm font-medium disabled:opacity-60"
         >
           📍 {locating ? t('locating') : t('useLocation')}
         </button>
-        {locationFailed && <p className="text-xs text-stone-500">{t('locationFailed')}</p>}
+        {locationFailed && (
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t('locationFailed')}</p>
+        )}
       </div>
 
       {/* Render the selected view */}

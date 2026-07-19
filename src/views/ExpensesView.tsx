@@ -59,29 +59,30 @@ export default function ExpensesView() {
   const net = netBalances(expenses, travelers);
   const pays = settlements(net);
 
-  const input = 'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm';
+  const input =
+    'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm';
 
   return (
     <div className="space-y-3">
       <h1 className="text-xl font-bold">💵 {t('expensesTitle')}</h1>
-      <p className="text-xs text-stone-500">{t('expensesSingleWriter')}</p>
+      <p className="text-xs text-stone-500 dark:text-stone-400">{t('expensesSingleWriter')}</p>
 
       {/* Net balances + who pays whom */}
-      <div className="rounded-xl bg-white shadow-sm p-3">
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
         <h3 className="font-semibold text-sm mb-2">{t('balances')}</h3>
         <ul className="space-y-1 text-sm">
           {travelers.map((tr) => (
             <li key={tr.id} className="flex justify-between">
               <span>{tr.name}</span>
-              <span className={net[tr.id] >= 0 ? 'text-green-700 font-medium' : 'text-red-700 font-medium'}>
+              <span className={net[tr.id] >= 0 ? 'text-green-700 dark:text-green-400 font-medium' : 'text-red-700 dark:text-red-400 font-medium'}>
                 {net[tr.id] >= 0 ? '+' : ''}{fmtUsd(net[tr.id])}
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-2 pt-2 border-t border-stone-200 text-sm space-y-1">
+        <div className="mt-2 pt-2 border-t border-stone-200 dark:border-stone-700 text-sm space-y-1">
           {pays.length === 0 ? (
-            <p className="text-stone-500">{t('settledUp')}</p>
+            <p className="text-stone-500 dark:text-stone-400">{t('settledUp')}</p>
           ) : (
             pays.map((p, i) => (
               <p key={i}>
@@ -94,7 +95,7 @@ export default function ExpensesView() {
       </div>
 
       {/* Add form */}
-      <form onSubmit={add} className="rounded-xl bg-white shadow-sm p-3 space-y-2">
+      <form onSubmit={add} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
         <h3 className="font-semibold text-sm">{t('expenseAdd')}</h3>
         <label className="block text-sm">
           {t('expensePayer')}
@@ -131,24 +132,24 @@ export default function ExpensesView() {
 
       {/* List */}
       {expenses.map((e) => (
-        <div key={e.id} className="rounded-xl bg-white shadow-sm p-3 flex items-center gap-2 text-sm">
+        <div key={e.id} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-center gap-2 text-sm">
           <div className="flex-1 min-w-0">
             <p className="font-medium">
               {nameOf(e.payerId)} · {fmtUsd(e.amountUsd)}
             </p>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               {e.date} · {t(CATEGORIES.find((c) => c.value === e.category)!.labelKey)}
               {e.note ? ` · ${e.note}` : ''}
             </p>
           </div>
-          <button onClick={() => remove(e.id)} aria-label={t('deleteExpense')} className="text-red-700 px-2">
+          <button onClick={() => remove(e.id)} aria-label={t('deleteExpense')} className="text-red-700 dark:text-red-400 px-2">
             🗑️
           </button>
         </div>
       ))}
 
       {expenses.length > 0 && (
-        <button onClick={exportJson} className="w-full rounded-lg bg-stone-200 py-2 text-sm font-medium">
+        <button onClick={exportJson} className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium">
           ⬇️ {t('exportExpenses')}
         </button>
       )}

@@ -44,12 +44,13 @@ export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Prop
     });
   };
 
-  const input = 'w-full rounded-lg border border-stone-300 px-3 py-2 text-sm bg-white';
+  const input =
+    'w-full rounded-lg border border-stone-300 dark:border-stone-600 px-3 py-2 text-sm bg-white dark:bg-stone-800';
 
   return (
     // Fixed overlay covering the screen (a hand-rolled modal, no library)
     <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
-      <form onSubmit={submit} className="bg-white rounded-2xl p-4 w-full max-w-md space-y-3 max-h-[85vh] overflow-y-auto">
+      <form onSubmit={submit} className="bg-white dark:bg-stone-900 rounded-2xl p-4 w-full max-w-md space-y-3 max-h-[85vh] overflow-y-auto">
         <h3 className="font-bold text-lg">{initial ? t('editStop') : t('addStop')}</h3>
 
         <label className="block text-sm">
@@ -85,7 +86,7 @@ export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Prop
           <button type="submit" className="flex-1 bg-red-700 text-white rounded-lg py-2 font-medium">
             {t('save')}
           </button>
-          <button type="button" onClick={onCancel} className="flex-1 bg-stone-200 rounded-lg py-2 font-medium">
+          <button type="button" onClick={onCancel} className="flex-1 bg-stone-200 dark:bg-stone-700 rounded-lg py-2 font-medium">
             {t('cancel')}
           </button>
         </div>

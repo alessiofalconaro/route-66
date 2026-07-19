@@ -27,7 +27,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <h2 className="text-lg font-bold leading-tight">{segment.label}</h2>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {segment.dates}
             {segment.distanceMiles ? ` · ~${segment.distanceMiles} ${t('miles')}` : ''}
             {segment.driveHours ? ` · ~${segment.driveHours} ${t('hoursShort')}` : ''}
@@ -36,7 +36,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
         <button
           onClick={() => setEditing((e) => !e)}
           className={`text-sm font-medium rounded-lg px-3 py-1.5 ${
-            editing ? 'bg-red-700 text-white' : 'bg-stone-200'
+            editing ? 'bg-red-700 text-white' : 'bg-stone-200 dark:bg-stone-700'
           }`}
         >
           {editing ? t('doneEditing') : `✏️ ${t('editItinerary')}`}
@@ -44,13 +44,15 @@ export default function SegmentView({ segment }: { segment: Segment }) {
       </div>
 
       {segment.warning && (
-        <div className="rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-sm p-3">
+        <div className="rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
           ⚠️ {segment.warning}
         </div>
       )}
 
       {/* POI list */}
-      {pois.length === 0 && <p className="text-sm text-stone-500">{t('noPois')}</p>}
+      {pois.length === 0 && (
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('noPois')}</p>
+      )}
       {pois.map((p) => (
         <PoiCard
           key={p.id}
@@ -66,7 +68,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
       {editing && (
         <button
           onClick={() => setModal('new')}
-          className="w-full rounded-xl border-2 border-dashed border-stone-300 py-3 text-sm font-medium text-stone-600"
+          className="w-full rounded-xl border-2 border-dashed border-stone-300 dark:border-stone-600 py-3 text-sm font-medium text-stone-600 dark:text-stone-300"
         >
           ＋ {t('addStop')}
         </button>
@@ -74,7 +76,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
 
       {/* Fuel stops for this leg */}
       {segment.fuelStops && segment.fuelStops.length > 0 && (
-        <div className="rounded-xl bg-white shadow-sm p-3">
+        <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
           <h3 className="font-semibold text-sm mb-2">⛽ {t('fuelStopsTitle')}</h3>
           <ul className="space-y-2">
             {segment.fuelStops.map((f, i) => (
@@ -82,7 +84,9 @@ export default function SegmentView({ segment }: { segment: Segment }) {
                 <span className="font-medium">{f.station}</span>, {f.address} — $
                 {f.pricePerGal.toFixed(2)}
                 {t('perGal')} · ${f.amountUsd.toFixed(2)}
-                {f.warning && <p className="text-xs text-amber-700 mt-0.5">{f.warning}</p>}
+                {f.warning && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">{f.warning}</p>
+                )}
               </li>
             ))}
           </ul>

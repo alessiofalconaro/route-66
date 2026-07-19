@@ -30,11 +30,11 @@ export default function CityView({ cityId }: { cityId: string }) {
     <div className="space-y-3">
       <div>
         <h2 className="text-lg font-bold leading-tight">{hotel.city}</h2>
-        <p className="text-xs text-stone-500">{hotel.nights}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{hotel.nights}</p>
       </div>
       <HotelCard hotel={hotel} />
       {pois.length === 0 ? (
-        <p className="text-sm text-stone-500">{t('emptyCityHint')}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-400">{t('emptyCityHint')}</p>
       ) : (
         pois.map((p) => <PoiCard key={p.id} poi={p} />)
       )}

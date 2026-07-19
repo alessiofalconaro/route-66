@@ -8,7 +8,7 @@ export default function HotelsView() {
     <div className="space-y-3">
       <div>
         <h1 className="text-xl font-bold">🛏️ {t('hotelsTitle')}</h1>
-        <p className="text-xs text-stone-500">{t('nights16')}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('nights16')}</p>
       </div>
       {HOTELS.map((h) => (
         <HotelCard key={h.id} hotel={h} />

@@ -30,7 +30,7 @@ export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMo
   const { t } = useI18n();
 
   return (
-    <div className="rounded-xl bg-white shadow-sm p-3 flex gap-3">
+    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex gap-3">
       {/* Photo if configured, category emoji otherwise */}
       {poi.photo ? (
         <img
@@ -40,7 +40,7 @@ export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMo
           className="w-16 h-16 rounded-lg object-cover shrink-0"
         />
       ) : (
-        <div className="w-16 h-16 rounded-lg bg-stone-100 flex items-center justify-center text-3xl shrink-0">
+        <div className="w-16 h-16 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl shrink-0">
           {CATEGORY_ICON[poi.category]}
         </div>
       )}
@@ -49,16 +49,16 @@ export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMo
         <div className="flex items-start gap-2">
           <h3 className="font-semibold leading-snug flex-1">{poi.name}</h3>
           {poi.category === 'nba' && (
-            <span className="text-[10px] font-bold bg-orange-100 text-orange-800 rounded px-1.5 py-0.5">
+            <span className="text-[10px] font-bold bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-300 rounded px-1.5 py-0.5">
               {t('nbaBadge')}
             </span>
           )}
         </div>
-        <p className="text-xs text-stone-500">
+        <p className="text-xs text-stone-500 dark:text-stone-400">
           {poi.city}
           {poi.dwellMinutes ? ` · ${poi.dwellMinutes} ${t('minutes')}` : ''}
         </p>
-        {poi.note && <p className="text-xs text-stone-600 mt-1">{poi.note}</p>}
+        {poi.note && <p className="text-xs text-stone-600 dark:text-stone-300 mt-1">{poi.note}</p>}
 
         <div className="mt-2 flex flex-wrap gap-2">
           <a
@@ -72,16 +72,16 @@ export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMo
 
           {editing && (
             <span className="inline-flex gap-1">
-              <button onClick={onMoveUp} aria-label={t('moveUp')} className="px-2 py-1 rounded-lg bg-stone-200 text-sm">
+              <button onClick={onMoveUp} aria-label={t('moveUp')} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-sm">
                 ↑
               </button>
-              <button onClick={onMoveDown} aria-label={t('moveDown')} className="px-2 py-1 rounded-lg bg-stone-200 text-sm">
+              <button onClick={onMoveDown} aria-label={t('moveDown')} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-sm">
                 ↓
               </button>
-              <button onClick={onEdit} className="px-2 py-1 rounded-lg bg-stone-200 text-sm">
+              <button onClick={onEdit} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-sm">
                 ✏️
               </button>
-              <button onClick={onRemove} aria-label={t('removeStop')} className="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-sm">
+              <button onClick={onRemove} aria-label={t('removeStop')} className="px-2 py-1 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-sm">
                 🗑️
               </button>
             </span>

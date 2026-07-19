@@ -5,15 +5,15 @@ import { useI18n } from '../i18n';
 export default function HotelCard({ hotel }: { hotel: Hotel }) {
   const { t } = useI18n();
   return (
-    <div className="rounded-xl bg-white shadow-sm p-3">
+    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
       <div className="flex items-start gap-2">
         <span className="text-2xl">🛏️</span>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold leading-snug">{hotel.name}</h3>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-stone-500 dark:text-stone-400">
             {hotel.city} · {hotel.nights}
           </p>
-          <p className="text-xs text-stone-600 mt-1">
+          <p className="text-xs text-stone-600 dark:text-stone-300 mt-1">
             {t('parking')}: {hotel.parking}
             {hotel.resortFee ? ` · ${t('resortFee')}: ${hotel.resortFee}` : ''}
           </p>

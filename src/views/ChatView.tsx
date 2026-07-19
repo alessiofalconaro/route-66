@@ -47,7 +47,7 @@ export default function ChatView() {
       <label className="block text-sm font-medium">
         {t('chatPickSegment')}
         <select
-          className="w-full rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm"
+          className="w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm"
           value={segmentId}
           onChange={(e) => {
             setSegmentId(e.target.value);
@@ -63,9 +63,9 @@ export default function ChatView() {
 
       {/* Offline layer: always shown instantly, works in airplane mode */}
       {ideas && (
-        <div className="rounded-xl bg-white shadow-sm p-3">
+        <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3">
           <h3 className="font-semibold text-sm mb-1">💡 {t('chatOfflineIdeas')}</h3>
-          <p className="text-sm text-stone-700 whitespace-pre-wrap">{ideas}</p>
+          <p className="text-sm text-stone-700 dark:text-stone-300 whitespace-pre-wrap">{ideas}</p>
         </div>
       )}
 
@@ -74,15 +74,17 @@ export default function ChatView() {
         <div
           key={i}
           className={`rounded-xl p-3 text-sm whitespace-pre-wrap ${
-            m.role === 'user' ? 'bg-red-50 border border-red-200 ml-6' : 'bg-white shadow-sm mr-6'
+            m.role === 'user'
+              ? 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 ml-6'
+              : 'bg-white dark:bg-stone-900 shadow-sm mr-6'
           }`}
         >
           {m.content}
         </div>
       ))}
-      {busy && <p className="text-sm text-stone-500">{t('chatThinking')}</p>}
+      {busy && <p className="text-sm text-stone-500 dark:text-stone-400">{t('chatThinking')}</p>}
       {offlineNotice && (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs text-amber-700 dark:text-amber-400">
           {chatConfigured() ? t('chatOfflineShown') : t('chatNotConfigured')}
         </p>
       )}
@@ -90,7 +92,7 @@ export default function ChatView() {
       {/* Online layer input */}
       <div className="flex gap-2">
         <input
-          className="flex-1 rounded-lg border border-stone-300 bg-white px-3 py-2.5 text-sm"
+          className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}

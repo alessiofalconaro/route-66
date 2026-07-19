@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* Dark mode is driven by the "dark" class on <html> (set by ThemeProvider),
+   not only by the OS preference — so the in-app toggle can override it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Respect the iPhone notch / home bar (safe areas) */
 :root {
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -11,5 +15,45 @@ html {
 }
 
 body {
-  @apply bg-stone-100 text-stone-900;
+  @apply bg-stone-100 text-stone-900 dark:bg-stone-950 dark:text-stone-100;
+}
+
+/* ---- Bottom dock: "liquid glass" bar (style ported from budget-tracker) ----
+   The glass reaches the physical bottom of the screen; the iPhone home-indicator
+   safe-area is INTERNAL padding filled by the glass → no dark band below. */
+.dock-pill {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  padding: 8px 10px calc(8px + var(--safe-bottom));
+  border-radius: 26px 26px 0 0;
+  background: rgb(250 250 249 / 0.72); /* stone-50 at 72% */
+  backdrop-filter: blur(26px) saturate(1.8);
+  -webkit-backdrop-filter: blur(26px) saturate(1.8);
+  border-top: 1px solid rgb(28 25 23 / 0.12);
+  box-shadow: 0 -6px 26px rgb(0 0 0 / 0.15);
+  /* the bar handles its own touch gestures — never scrolls the page */
+  touch-action: none;
+}
+.dark .dock-pill {
+  background: rgb(28 25 23 / 0.72); /* stone-900 at 72% */
+  border-top-color: rgb(250 250 249 / 0.12);
+  box-shadow: 0 -6px 26px rgb(0 0 0 / 0.35);
+}
+
+/* The sliding "shadow" behind the active tab. Only `transform` animates →
+   GPU compositing, no repaint of the blur underneath. */
+.dock-ind {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: calc(8px + var(--safe-bottom));
+  border-radius: 18px;
+  background: rgb(185 28 28 / 0.16); /* red-700 tint */
+  box-shadow:
+    inset 0 0 0 1px rgb(185 28 28 / 0.35),
+    0 4px 16px rgb(185 28 28 / 0.25);
+  transition: transform 0.3s cubic-bezier(0.34, 1.15, 0.5, 1);
+  will-change: transform;
+  pointer-events: none;
 }

@@ -16,7 +16,7 @@ export default function MoreView() {
   if (sub !== 'menu') {
     return (
       <div className="space-y-3">
-        <button onClick={() => setSub('menu')} className="text-sm font-medium text-red-700">
+        <button onClick={() => setSub('menu')} className="text-sm font-medium text-red-700 dark:text-red-400">
           ← {t('moreTitle')}
         </button>
         {sub === 'expenses' && <ExpensesView />}
@@ -27,7 +27,8 @@ export default function MoreView() {
     );
   }
 
-  const item = 'w-full rounded-xl bg-white shadow-sm p-4 text-left font-medium flex items-center gap-3';
+  const item =
+    'w-full rounded-xl bg-white dark:bg-stone-900 shadow-sm p-4 text-left font-medium flex items-center gap-3';
 
   return (
     <div className="space-y-3">
@@ -35,13 +36,18 @@ export default function MoreView() {
 
       {/* Shared Google Photos album (link-only, no in-app hosting) */}
       {albumUrl ? (
-        <a href={albumUrl} target="_blank" rel="noopener noreferrer" className={`${item} bg-red-700 text-white`}>
+        <a
+          href={albumUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full rounded-xl bg-red-700 text-white shadow-sm p-4 text-left font-medium flex items-center gap-3"
+        >
           📸 {t('albumButton')}
         </a>
       ) : (
-        <div className="rounded-xl bg-white shadow-sm p-4">
+        <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-4">
           <p className="font-medium">📸 {t('albumButton')}</p>
-          <p className="text-xs text-stone-500 mt-1">{t('albumNotSet')}</p>
+          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{t('albumNotSet')}</p>
         </div>
       )}
 
@@ -51,7 +57,7 @@ export default function MoreView() {
       <button onClick={() => setSub('settings')} className={item}>⚙️ {t('settingsTitle')}</button>
 
       {/* Static desert-heat warning (from the itinerary, no API) */}
-      <div className="rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-sm p-3">
+      <div className="rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
         <p className="font-semibold">🌡️ {t('weatherTitle')}</p>
         <p className="mt-1">{t('weatherBody')}</p>
       </div>
@@ -77,7 +83,7 @@ function ChecklistView() {
     <div className="space-y-3">
       <h1 className="text-xl font-bold">✅ {t('checklistTitle')}</h1>
       {items.map((it) => (
-        <label key={it.id} className="rounded-xl bg-white shadow-sm p-3 flex items-start gap-3 text-sm">
+        <label key={it.id} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-start gap-3 text-sm">
           <input
             type="checkbox"
             checked={done.includes(it.id)}
@@ -107,10 +113,10 @@ function EmergencyView() {
         <a
           key={n.phone}
           href={`tel:${n.phone}`}
-          className="rounded-xl bg-white shadow-sm p-4 flex items-center justify-between font-medium"
+          className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-4 flex items-center justify-between font-medium"
         >
           <span>{n.label}</span>
-          <span className="text-red-700">📞 {n.phone}</span>
+          <span className="text-red-700 dark:text-red-400">📞 {n.phone}</span>
         </a>
       ))}
     </div>
