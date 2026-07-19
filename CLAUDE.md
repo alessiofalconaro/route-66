@@ -351,5 +351,5 @@ When generating or explaining code:
 6. **No login / no auth / no accounts / no admin (Option A).** Nothing central exists to administer or to break into. A per-device "who am I" picker is kept (local only, cosmetic for now, future-proofing). Alessio ("Falco") keeps the expenses on his device.
 7. **Photos & videos:** shared **Google Photos** album, **invite-only**. Not hosted in the app; the app only links to it.
 8. **Camp Snap CS-Pro shot log:** optional, low priority, single-user, no roll/frame model.
-9. **Sync:** none for app data. Single-device with JSON export/import (keeps $0 / no backend / no secrets). Media sync is handled entirely by the shared album, outside the app.
+9. **Sync:** ~~none for app data~~ **AMENDED (July 2026, by the human's request):** shared EXPENSES sync across the three phones via the existing Cloudflare Worker + free KV namespace, gated by a `TRIP_PIN` Worker secret. Single-writer preserved: only Falco's phone (traveler `t1`) pushes; the others pull read-only on opening Expenses and keep the last copy offline. Everything else (itinerary edits, personal expenses, settings) remains device-local with JSON export/import. Media sync still handled by the shared album, outside the app.
 10. **Cost & security:** everything on free tiers with no billing attached; the Groq key lives only in the Cloudflare Worker secret (section 9b).
