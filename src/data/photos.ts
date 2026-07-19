@@ -5,7 +5,7 @@ export const PHOTOS: Record<string, string> = {
   "chi-navy-pier": "img/poi/chi-navy-pier.jpg",
   "chi-360": "img/poi/chi-360.jpg",
   "chi-lincoln-zoo": "img/poi/chi-lincoln-zoo.jpg",
-  "chi-art-institute": "img/poi/chi-art-institute.png",
+  "chi-art-institute": "img/poi/chi-art-institute.jpg",
   "chi-united-center": "img/poi/chi-united-center.jpg",
   "leg1-joliet": "img/poi/leg1-joliet.jpg",
   "leg1-dwight": "img/poi/leg1-dwight.jpg",
@@ -76,5 +76,8 @@ export const PHOTOS: Record<string, string> = {
   "leg3-tristate": "img/poi/leg3-tristate.jpg",
   "leg11-celebration": "img/poi/leg11-celebration.jpg",
   "albuquerque": "img/poi/albuquerque.jpg",
-  "las-vegas": "img/poi/leg9-caesars.jpg"
+  "las-vegas": "img/poi/leg9-caesars.jpg",
+  "grand-canyon": "img/poi/grand-canyon.jpg",
+  "three-rivers": "img/poi/three-rivers.jpg",
+  "leg3-tower-theatre": "img/poi/leg3-tower-theatre.jpg"
 };

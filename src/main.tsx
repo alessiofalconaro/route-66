@@ -8,7 +8,32 @@ import './index.css';
 // 'virtual:...' is a module Vite creates at build time (not a real file).
 import { registerSW } from 'virtual:pwa-register';
 
-registerSW({ immediate: true });
+// Auto-update like budget-tracker: no need to close and reopen the app.
+// 1. If this page was ALREADY controlled by a service worker, a controller
+//    change means a new version just activated → reload once to run it.
+//    (The guard also avoids a bogus reload on the very first install.)
+if (navigator.serviceWorker?.controller) {
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloaded) {
+      reloaded = true;
+      window.location.reload();
+    }
+  });
+}
+
+// 2. Actively look for new versions: every 15 minutes while the app is open,
+//    and every time the app comes back to the foreground.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (!registration) return;
+    setInterval(() => void registration.update(), 15 * 60 * 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') void registration.update();
+    });
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

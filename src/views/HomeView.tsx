@@ -1,7 +1,7 @@
 // Home: "Where are we?" — pick a city or a driving leg (or use GPS).
 // The selection lives in the URL hash (#/home/city/tulsa) so the browser's
 // back gesture returns from a city/leg view to the pickers.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CITIES, LEGS, segmentById } from '../data/tripData';
 import { detectNearestCity } from '../lib/geo';
 import type { Router } from '../lib/router';
@@ -22,6 +22,12 @@ export default function HomeView({ router }: { router: Router }) {
   // Route shape: ['home'] | ['home','city',<id>] | ['home','leg',<id>]
   const mode = router.route[1]; // 'city' | 'leg' | undefined
   const selectedId = router.route[2];
+
+  // Picking a city/leg makes the location banners stale → dismiss them.
+  useEffect(() => {
+    setFarAway(null);
+    setLocationFailed(false);
+  }, [mode, selectedId]);
 
   const useLocation = async () => {
     setLocating(true);
@@ -92,9 +98,18 @@ export default function HomeView({ router }: { router: Router }) {
           <p className="text-xs text-stone-500 dark:text-stone-400">{t('locationFailed')}</p>
         )}
         {farAway && (
-          <div className="rounded-lg bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
-            ✈️ {t('locationFar')} <strong>{farAway.label}</strong> (~
-            {farAway.km.toLocaleString()} km)
+          <div className="rounded-lg bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3 flex items-start gap-2">
+            <span className="flex-1">
+              ✈️ {t('locationFar')} <strong>{farAway.label}</strong> (~
+              {farAway.km.toLocaleString()} km)
+            </span>
+            <button
+              onClick={() => setFarAway(null)}
+              aria-label="Dismiss"
+              className="shrink-0 font-bold px-1 leading-none text-lg"
+            >
+              ×
+            </button>
           </div>
         )}
       </div>

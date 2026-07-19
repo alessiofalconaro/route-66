@@ -3,24 +3,39 @@
 // 2. ONLINE (enhancement): free-text follow-ups via the Cloudflare Worker →
 //    Groq. On ANY failure we show the offline blurb + a small notice.
 import { useState } from 'react';
-import { SEGMENTS } from '../data/tripData';
+import { CITIES, CITY_SEGMENT, LEGS, SEGMENTS, segmentById } from '../data/tripData';
 import { EXTRA_IDEAS } from '../data/extraIdeas';
 import { askAssistant, chatConfigured, type ChatMessage } from '../lib/chat';
 import { useSessionState } from '../lib/storage';
 import { useI18n } from '../i18n';
 
+/** City id → the segment whose "extra ideas" best cover that city:
+ *  its own city segment if it has one, otherwise the leg that ARRIVES there
+ *  (whose ideas describe exactly that area). */
+function citySegmentId(cityId: string): string {
+  if (CITY_SEGMENT[cityId]) return CITY_SEGMENT[cityId];
+  return LEGS.find((l) => l.hotelId === cityId)?.id ?? SEGMENTS[0].id;
+}
+
 export default function ChatView() {
   const { t, lang } = useI18n();
   // sessionStorage: the conversation survives switching tab or briefly
   // leaving the app; it resets only when the app is closed and reopened.
-  const [segmentId, setSegmentId] = useSessionState('chat.segment', SEGMENTS[0].id);
+  // Value format: "city:<cityId>" or "leg:<segmentId>".
+  const [sel, setSel] = useSessionState('chat.segment', 'city:chicago');
   const [messages, setMessages] = useSessionState<ChatMessage[]>('chat.messages', []);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [offlineNotice, setOfflineNotice] = useState(false);
 
-  const segment = SEGMENTS.find((s) => s.id === segmentId)!;
-  const ideas = EXTRA_IDEAS[segmentId]?.[lang];
+  const [kind, selId] = sel.includes(':') ? sel.split(':') : ['leg', sel];
+  const segment =
+    segmentById(kind === 'city' ? citySegmentId(selId) : selId) ?? SEGMENTS[0];
+  // What we tell the model: the city name when a city is picked (more precise
+  // than the whole leg), the leg label otherwise.
+  const contextLabel =
+    kind === 'city' ? (CITIES.find((c) => c.id === selId)?.label ?? segment.label) : segment.label;
+  const ideas = EXTRA_IDEAS[segment.id]?.[lang];
 
   const send = async () => {
     const question = input.trim();
@@ -31,7 +46,7 @@ export default function ChatView() {
     setMessages(next);
     setBusy(true);
     try {
-      const reply = await askAssistant(next, segment.label, lang);
+      const reply = await askAssistant(next, contextLabel, lang);
       setMessages([...next, { role: 'assistant', content: reply }]);
     } catch {
       // Any failure (no signal, rate limit, not configured): offline fallback.
@@ -50,17 +65,25 @@ export default function ChatView() {
       <label className="block text-sm font-medium">
         {t('chatPickSegment')}
         <select
-          className="w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm"
-          value={segmentId}
+          className="mt-1.5 w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm"
+          value={sel}
           onChange={(e) => {
-            setSegmentId(e.target.value);
-            setMessages([]); // new segment = fresh conversation
+            setSel(e.target.value);
+            setMessages([]); // new place = fresh conversation
             setOfflineNotice(false);
           }}
         >
-          {SEGMENTS.map((s) => (
-            <option key={s.id} value={s.id}>{s.label}</option>
-          ))}
+          {/* Same structure as Home: all the cities first, then the legs */}
+          <optgroup label={`🏙️ ${t('inACity')}`}>
+            {CITIES.map((c) => (
+              <option key={c.id} value={`city:${c.id}`}>{c.label}</option>
+            ))}
+          </optgroup>
+          <optgroup label={`🚗 ${t('drivingLeg')}`}>
+            {LEGS.map((l) => (
+              <option key={l.id} value={`leg:${l.id}`}>{l.label}</option>
+            ))}
+          </optgroup>
         </select>
       </label>
 
