@@ -58,5 +58,6 @@ export function settlements(net: Record<string, number>): Settlement[] {
 }
 
 export function fmtUsd(n: number): string {
-  return `$${n.toFixed(2)}`;
+  // "-$25.00" reads better than the "$-25.00" a plain template would give
+  return `${n < 0 ? '-' : ''}$${Math.abs(n).toFixed(2)}`;
 }

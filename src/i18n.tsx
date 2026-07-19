@@ -3,7 +3,7 @@
 // Java analogy: a ResourceBundle, but type-checked — a missing key is a
 // compile error, not a runtime surprise.
 
-import { createContext, useContext, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { usePersistentState } from './lib/storage';
 
 export type Lang = 'en' | 'es';
@@ -172,6 +172,7 @@ const en = {
   changePin: 'Change PIN',
   // Visited sorting
   sortToSee: 'To-see first',
+  markSeen: 'Mark as seen',
   // More screen
   moreTitle: 'More',
   albumButton: 'Open our trip album',
@@ -368,6 +369,7 @@ const es: typeof en = {
   confirmPin: 'Confirmar PIN',
   changePin: 'Cambiar PIN',
   sortToSee: 'Por ver primero',
+  markSeen: 'Marcar como visto',
   moreTitle: 'Más',
   albumButton: 'Abrir nuestro álbum del viaje',
   albumNotSet: 'Configura primero el enlace del álbum compartido de Google Photos en Ajustes.',
@@ -432,6 +434,10 @@ const I18nContext = createContext<I18nValue | null>(null);
 export function I18nProvider({ children }: { children: ReactNode }) {
   // Default language: English; the last choice is remembered (localStorage).
   const [lang, setLang] = usePersistentState<Lang>('lang', 'en');
+  // Keep <html lang> in sync — screen readers pick the right voice/accent.
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
   const t = (key: TKey) => DICTS[lang][key];
   return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>;
 }

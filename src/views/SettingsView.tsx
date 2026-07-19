@@ -68,7 +68,18 @@ export default function SettingsView() {
       ) {
         throw new Error('bad shape');
       }
-      if (confirm(t('importConfirm'))) setOverrides(parsed);
+      // Only keep photo values that are real images or plain URLs/paths.
+      const safePhoto = (p?: string) =>
+        p && /^(data:image\/|https?:\/\/|\/)/.test(p) ? p : undefined;
+      for (const p of Object.values(parsed.editedPois)) p.photo = safePhoto(p.photo);
+      for (const pois of Object.values(parsed.addedPois))
+        for (const p of pois) p.photo = safePhoto(p.photo);
+      if (confirm(t('importConfirm'))) {
+        setOverrides(parsed);
+        // an import is an edit like any other → propagate to the other phones
+        saveJson('overridesUpdatedAt', Date.now());
+        scheduleItineraryPush();
+      }
     } catch {
       alert(t('importError'));
     }

@@ -2,7 +2,7 @@
 // Categories: translated defaults + user-created ones (persisted), all shown
 // as "emoji name" sorted A→Z. Photo: picked from the phone, resized and
 // stored as a data-URL so it works offline like everything else.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Category, Poi } from '../types';
 import { usePersistentState } from '../lib/storage';
 import { fileToDataUrl } from '../lib/imageFile';
@@ -33,6 +33,13 @@ export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Prop
   const { t } = useI18n();
   const [customCats, setCustomCats] = usePersistentState<string[]>('customPoiCategories', []);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  // Escape closes the modal (keyboard/accessibility).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onCancel]);
 
   // One state object for the whole form (like a form-backing bean).
   const [form, setForm] = useState({
@@ -103,7 +110,12 @@ export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Prop
 
   return (
     // Fixed overlay covering the screen (a hand-rolled modal, no library)
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={initial ? t('editStop') : t('addStop')}
+    >
       <form
         onSubmit={submit}
         className="bg-white dark:bg-stone-900 rounded-2xl p-4 w-full max-w-md space-y-3 max-h-[85vh] overflow-y-auto"

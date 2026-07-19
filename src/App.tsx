@@ -180,7 +180,7 @@ export default function App() {
       </main>
 
       {/* Liquid-glass bottom dock (fixed, full width, safe-area inside) */}
-      <nav className="dock">
+      <nav className="dock" aria-label="Main">
         <div
           ref={pillRef}
           className="dock-pill"
@@ -201,6 +201,7 @@ export default function App() {
             <button
               key={tb.id}
               onClick={() => clickTab(tb.id)}
+              aria-current={tab === tb.id ? 'page' : undefined}
               className={`relative z-10 flex-1 py-2.5 flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
                 i === shownIdx
                   ? 'text-red-700 dark:text-red-400'
@@ -216,7 +217,12 @@ export default function App() {
 
       {/* First-run: pick which traveler uses this phone */}
       {whoAmI === null && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6">
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('firstRunTitle')}
+        >
           <div className="bg-white dark:bg-stone-900 rounded-2xl p-5 w-full max-w-sm space-y-3">
             <h2 className="font-bold text-lg">{t('firstRunTitle')}</h2>
             {travelers.map((tr) => (

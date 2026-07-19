@@ -87,7 +87,8 @@ export default function PoiCard({
           {onToggleVisited && (
             <button
               onClick={onToggleVisited}
-              aria-label="visited"
+              aria-label={t('markSeen')}
+              aria-pressed={visited}
               className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm ${
                 visited
                   ? 'bg-green-600 text-white'

@@ -21,8 +21,10 @@ Three friends, one rental car, zero running costs.
 - **Assistant** — instant offline "extra ideas" for every leg (bundled EN+ES);
   online free-text follow-ups via Groq when there is signal. Any failure falls
   back to the offline ideas — the assistant never blocks the app.
-- **Expenses** — single-writer splitter (Falco records; anyone can be the
-  payer). Proportional shares: the payer's own 1/3 offsets what they're owed.
+- **Expenses** — shared splitter: all three travelers add/delete from their
+  own phones (server-side merge, trip-PIN gated). Proportional shares: the
+  payer's own 1/3 offsets what they're owed. Plus a per-device personal
+  ledger that auto-includes your 1/3 of every shared expense.
 - **More** — shared Google Photos album link, pre-departure checklist,
   emergency numbers (works offline), desert-heat warning, EN/ES toggle.
 
