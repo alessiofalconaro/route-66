@@ -38,7 +38,9 @@ export default defineConfig({
       },
       workbox: {
         // Cache every built asset so the whole app works in airplane mode.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,json,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,webp,ico,json,woff2}'],
+        // POI photos push the precache past workbox's 2 MiB-per-file default
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // If a POI ever uses a Wikimedia Commons photo URL, cache it after
         // the first view so it is available offline afterwards.
         runtimeCaching: [

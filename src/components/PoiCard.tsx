@@ -1,5 +1,6 @@
 import type { Poi, Category } from '../types';
 import { mapsUrl } from '../lib/maps';
+import { PHOTOS } from '../data/photos';
 import { useI18n } from '../i18n';
 
 // One emoji per category — works offline, no image downloads needed.
@@ -31,15 +32,20 @@ export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMo
 
   return (
     <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex gap-3">
-      {/* Photo if configured, category emoji otherwise */}
-      {poi.photo ? (
-        <img
-          src={poi.photo}
-          alt={poi.name}
-          loading="lazy"
-          className="w-16 h-16 rounded-lg object-cover shrink-0"
-        />
-      ) : (
+      {/* Photo: explicit poi.photo, else the bundled Wikipedia image for this
+          id, else the category emoji. BASE_URL = '/route-66/' on Pages. */}
+      {(() => {
+        const src =
+          poi.photo ?? (PHOTOS[poi.id] ? import.meta.env.BASE_URL + PHOTOS[poi.id] : undefined);
+        return src ? (
+          <img
+            src={src}
+            alt={poi.name}
+            loading="lazy"
+            className="w-20 h-20 rounded-lg object-cover shrink-0"
+          />
+        ) : null;
+      })() ?? (
         <div className="w-16 h-16 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl shrink-0">
           {CATEGORY_ICON[poi.category]}
         </div>
