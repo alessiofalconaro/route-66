@@ -7,9 +7,17 @@
 //   5. strict request-shape validation, single endpoint, no arbitrary proxying
 // The key is never logged and never included in any response.
 
+// Minimal KV typing (we don't pull in @cloudflare/workers-types for one use).
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+}
+
 export interface Env {
   GROQ_API_KEY: string; // secret (wrangler secret put)
+  TRIP_PIN?: string; // secret (wrangler secret put) — gates the expense sync
   ALLOWED_ORIGIN: string; // plain var in wrangler.toml
+  EXPENSES: KVNamespace; // free KV storage for the shared-expenses snapshot
 }
 
 interface ChatMessage {
@@ -57,9 +65,71 @@ function validBody(body: unknown): body is { messages: ChatMessage[]; segmentLab
 function corsHeaders(origin: string): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, X-Trip-Pin',
   };
+}
+
+// --- shared-expenses sync (GET/PUT /expenses, gated by the trip PIN) --------
+const EXP_CATEGORIES = ['fuel', 'hotel', 'food', 'tickets', 'souvenirs', 'other'];
+
+function validExpenses(body: unknown): body is { expenses: unknown[]; updatedAt: number } {
+  if (typeof body !== 'object' || body === null) return false;
+  const b = body as Record<string, unknown>;
+  if (typeof b.updatedAt !== 'number') return false;
+  if (!Array.isArray(b.expenses) || b.expenses.length > 1000) return false;
+  return b.expenses.every((e) => {
+    if (typeof e !== 'object' || e === null) return false;
+    const x = e as Record<string, unknown>;
+    return (
+      typeof x.id === 'string' && x.id.length <= 64 &&
+      typeof x.payerId === 'string' && x.payerId.length <= 32 &&
+      typeof x.amountUsd === 'number' && x.amountUsd > 0 && x.amountUsd < 1000000 &&
+      typeof x.category === 'string' && EXP_CATEGORIES.includes(x.category) &&
+      typeof x.note === 'string' && x.note.length <= 300 &&
+      typeof x.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date)
+    );
+  });
+}
+
+async function handleExpenses(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const json = (status: number, data: unknown) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (!env.TRIP_PIN) return json(503, { error: 'sync_not_configured' });
+  // PIN check — never echoed back, never logged.
+  if (request.headers.get('X-Trip-Pin') !== env.TRIP_PIN) {
+    return json(401, { error: 'bad_pin' });
+  }
+
+  if (request.method === 'GET') {
+    const stored = await env.EXPENSES.get('shared-expenses');
+    return json(200, stored ? JSON.parse(stored) : { expenses: [], updatedAt: 0 });
+  }
+
+  if (request.method === 'PUT') {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json(400, { error: 'bad_json' });
+    }
+    if (!validExpenses(body)) return json(400, { error: 'bad_request' });
+    await env.EXPENSES.put(
+      'shared-expenses',
+      JSON.stringify({ expenses: body.expenses, updatedAt: body.updatedAt }),
+    );
+    return json(200, { ok: true });
+  }
+
+  return json(405, { error: 'method_not_allowed' });
 }
 
 export default {
@@ -74,17 +144,23 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: cors });
     }
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers: cors });
-    }
 
-    // Rule 4: rate limit per IP.
+    // Rule 4: rate limit per IP (both endpoints).
     const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown';
     if (rateLimited(ip)) {
       return new Response(JSON.stringify({ error: 'rate_limited' }), {
         status: 429,
         headers: { ...cors, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Expense sync lives on /expenses; everything else is the chat proxy.
+    if (new URL(request.url).pathname === '/expenses') {
+      return handleExpenses(request, env, cors);
+    }
+
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405, headers: cors });
     }
 
     // Rule 5: strict shape validation.

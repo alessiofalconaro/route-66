@@ -4,12 +4,13 @@
 //    Your share (1/3) of every shared expense recorded on THIS device is
 //    added to it automatically, as derived rows — never duplicated in storage,
 //    so editing/deleting a shared expense keeps the personal view in sync.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Expense } from '../types';
 import { FUEL_TOTAL_USD } from '../data/tripData';
 import { usePersistentState } from '../lib/storage';
 import { useTravelers } from '../lib/travelers';
 import { fmtUsd, netBalances, settlements } from '../lib/expenses';
+import { pullShared, pushShared, syncConfigured } from '../lib/expenseSync';
 import { useI18n, type TKey } from '../i18n';
 
 const CATEGORIES: { value: Expense['category']; labelKey: TKey }[] = [
@@ -71,8 +72,54 @@ export default function ExpensesView() {
 // ---------------------------------------------------------------------------
 function SharedSection() {
   const { t } = useI18n();
-  const { travelers, nameOf } = useTravelers();
+  const { travelers, nameOf, whoAmI } = useTravelers();
   const [expenses, setExpenses] = usePersistentState<Expense[]>('expenses', []);
+  // Timestamp of the last local change — decides who is newer during sync.
+  const [updatedAt, setUpdatedAt] = usePersistentState<number>('expensesUpdatedAt', 0);
+  const [pin] = usePersistentState<string>('tripPin', '');
+  const [syncState, setSyncState] = useState<'ok' | 'fail' | null>(null);
+
+  // Only Falco's phone (traveler t1) writes to the server — everyone else
+  // only pulls, so a stray edit on another phone can never clobber the ledger.
+  const isWriter = whoAmI === 't1';
+
+  // On opening the screen: pull; take the remote copy if it's newer. If this
+  // is the writer and LOCAL is newer (e.g. expenses added offline), push.
+  useEffect(() => {
+    if (!syncConfigured(pin)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const remote = await pullShared(pin);
+        if (cancelled) return;
+        if (remote.updatedAt > updatedAt) {
+          setExpenses(remote.expenses);
+          setUpdatedAt(remote.updatedAt);
+        } else if (isWriter && updatedAt > remote.updatedAt) {
+          await pushShared({ expenses, updatedAt }, pin);
+        }
+        if (!cancelled) setSyncState('ok');
+      } catch {
+        if (!cancelled) setSyncState('fail');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per mount
+  }, []);
+
+  /** Saves locally and (writer only) pushes to the Worker in the background. */
+  const saveAndSync = (next: Expense[]) => {
+    const ts = Date.now();
+    setExpenses(next);
+    setUpdatedAt(ts);
+    if (isWriter && syncConfigured(pin)) {
+      pushShared({ expenses: next, updatedAt: ts }, pin)
+        .then(() => setSyncState('ok'))
+        .catch(() => setSyncState('fail'));
+    }
+  };
 
   const [form, setForm] = useState({
     payerId: travelers[0]?.id ?? 't1',
@@ -94,11 +141,11 @@ function SharedSection() {
       note: form.note.trim(),
       date: form.date,
     };
-    setExpenses((list) => [expense, ...list]);
+    saveAndSync([expense, ...expenses]);
     setForm((f) => ({ ...f, amount: '', note: '' }));
   };
 
-  const remove = (id: string) => setExpenses((list) => list.filter((e) => e.id !== id));
+  const remove = (id: string) => saveAndSync(expenses.filter((e) => e.id !== id));
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(expenses, null, 2)], { type: 'application/json' });
@@ -125,6 +172,17 @@ function SharedSection() {
   return (
     <>
       <p className="text-xs text-stone-500 dark:text-stone-400">{t('expensesSingleWriter')}</p>
+      {syncConfigured(pin) && syncState && (
+        <p
+          className={`text-xs ${
+            syncState === 'ok'
+              ? 'text-green-700 dark:text-green-400'
+              : 'text-amber-700 dark:text-amber-400'
+          }`}
+        >
+          {syncState === 'ok' ? `↻ ${t('syncOk')}` : `⚠️ ${t('syncFail')}`}
+        </p>
+      )}
 
       {/* Summary: total, fuel vs plan, by category */}
       {expenses.length > 0 && (

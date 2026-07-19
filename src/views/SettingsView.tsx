@@ -13,6 +13,7 @@ export default function SettingsView() {
   const { theme, setTheme } = useTheme();
   const { travelers, rename, whoAmI, setWhoAmI } = useTravelers();
   const [albumUrl, setAlbumUrl] = usePersistentState<string>('albumUrl', '');
+  const [tripPin, setTripPin] = usePersistentState<string>('tripPin', '');
   const { overrides, setOverrides, resetAll } = useOverrides();
   // useRef = a stable reference to a DOM element (the hidden file input).
   const fileInput = useRef<HTMLInputElement>(null);
@@ -127,6 +128,19 @@ export default function SettingsView() {
           onChange={(e) => setAlbumUrl(e.target.value)}
         />
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('albumUrlHint')}</p>
+      </div>
+
+      {/* Trip PIN — unlocks the shared-expenses sync on this phone */}
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-1">
+        <h3 className="font-semibold text-sm">🔑 {t('tripPinLabel')}</h3>
+        <input
+          className={input}
+          type="text"
+          autoComplete="off"
+          value={tripPin}
+          onChange={(e) => setTripPin(e.target.value)}
+        />
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('tripPinHint')}</p>
       </div>
 
       {/* Itinerary data management */}

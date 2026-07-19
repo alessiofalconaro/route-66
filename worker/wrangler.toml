@@ -10,3 +10,9 @@ compatibility_date = "2025-01-01"
 [vars]
 # NOT a secret: the exact origin allowed to call this Worker (CORS).
 ALLOWED_ORIGIN = "https://alessiofalconaro.github.io"
+
+# Free KV storage for the shared-expenses sync (the namespace id is not a
+# secret; access requires the TRIP_PIN secret, set via `wrangler secret put`).
+[[kv_namespaces]]
+binding = "EXPENSES"
+id = "122aa4bea68146d0a8ced567ae1669d6"

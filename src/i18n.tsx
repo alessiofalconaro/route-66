@@ -113,6 +113,10 @@ const en = {
   expenseNote: 'Note',
   expenseDate: 'Date',
   expShared: 'Shared',
+  syncOk: 'Synced',
+  syncFail: 'No connection — showing the last saved copy',
+  tripPinLabel: 'Trip PIN (expense sync)',
+  tripPinHint: 'Same PIN on all three phones — ask Falco. Empty = sync off.',
   expPersonal: 'Personal',
   expPersonalHint:
     'Only on this phone — each traveler keeps their own log. Your share of every shared expense is added automatically.',
@@ -274,6 +278,10 @@ const es: typeof en = {
   expenseNote: 'Nota',
   expenseDate: 'Fecha',
   expShared: 'Compartidos',
+  syncOk: 'Sincronizado',
+  syncFail: 'Sin conexión — se muestra la última copia guardada',
+  tripPinLabel: 'PIN del viaje (sync de gastos)',
+  tripPinHint: 'El mismo PIN en los tres teléfonos — pídeselo a Falco. Vacío = sync apagado.',
   expPersonal: 'Personales',
   expPersonalHint:
     'Solo en este teléfono — cada viajero lleva su propio registro. Tu parte de cada gasto compartido se añade automáticamente.',
