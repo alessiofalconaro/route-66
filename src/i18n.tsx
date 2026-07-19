@@ -167,6 +167,7 @@ const en = {
   pinOk: 'PIN correct — sync active ✓',
   pinBad: 'Wrong PIN',
   pinNetErr: 'Could not verify — check your connection and try again',
+  pinNoServer: 'The server has no PIN configured yet (TRIP_PIN missing on the Worker)',
   confirmPin: 'Confirm PIN',
   changePin: 'Change PIN',
   // Visited sorting
@@ -363,6 +364,7 @@ const es: typeof en = {
   pinOk: 'PIN correcto — sync activo ✓',
   pinBad: 'PIN incorrecto',
   pinNetErr: 'No se pudo verificar — comprueba la conexión y reinténtalo',
+  pinNoServer: 'El servidor aún no tiene PIN configurado (falta TRIP_PIN en el Worker)',
   confirmPin: 'Confirmar PIN',
   changePin: 'Cambiar PIN',
   sortToSee: 'Por ver primero',

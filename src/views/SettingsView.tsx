@@ -19,9 +19,9 @@ export default function SettingsView() {
   // PIN verification: explicit — the check runs only when the user taps
   // "Confirm PIN". Once verified, the field locks; "Change PIN" unlocks it.
   const [pinVerified, setPinVerified] = usePersistentState<boolean>('tripPinVerified', false);
-  const [pinStatus, setPinStatus] = useState<'idle' | 'checking' | 'ok' | 'bad' | 'neterr'>(
-    'idle',
-  );
+  const [pinStatus, setPinStatus] = useState<
+    'idle' | 'checking' | 'ok' | 'bad' | 'neterr' | 'noserver'
+  >('idle');
 
   const confirmPin = async () => {
     if (!tripPin.trim()) return;
@@ -31,8 +31,10 @@ export default function SettingsView() {
       setPinVerified(true); // correct → field locks
       setPinStatus('ok');
     } catch (err) {
-      // 401 = wrong PIN (field stays editable); anything else = network issue
-      setPinStatus(err instanceof Error && err.message.includes('401') ? 'bad' : 'neterr');
+      // 401 = wrong PIN (field stays editable); 503 = the Worker has no
+      // TRIP_PIN secret yet; anything else = network issue.
+      const msg = err instanceof Error ? err.message : '';
+      setPinStatus(msg.includes('401') ? 'bad' : msg.includes('503') ? 'noserver' : 'neterr');
     }
   };
 
@@ -201,6 +203,11 @@ export default function SettingsView() {
         {pinStatus === 'neterr' && (
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
             ⚠️ {t('pinNetErr')}
+          </p>
+        )}
+        {pinStatus === 'noserver' && (
+          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+            ⚠️ {t('pinNoServer')}
           </p>
         )}
       </div>
