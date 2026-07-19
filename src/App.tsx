@@ -34,24 +34,26 @@ export default function App() {
   // Current tab = first segment of the hash route (#/hotels → 'hotels').
   const tab: Tab = (TABS.find((tb) => tb.id === router.route[0])?.id ?? 'home') as Tab;
 
-  // Remember the deepest route seen per tab, so tapping "Home" from Hotels
-  // brings you back to the city/leg you were looking at, not to a blank Home.
-  const lastRoutes = useRef<Record<string, string>>({});
+  // Remember the deepest HOME route, so tapping "Home" from another tab
+  // brings you back to the city/leg you were looking at. Only Home: restoring
+  // deep routes on More caused a trap (re-entering More landed inside a
+  // sub-section with no way back to the More menu).
+  const lastHomeRoute = useRef<string>('home');
   const mainRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (router.route.length > 0) {
-      lastRoutes.current[router.route[0]] = router.route.join('/');
-    }
+    if (router.route[0] === 'home') lastHomeRoute.current = router.route.join('/');
   }, [router.route]);
 
-  /** Dock tap: re-tapping the ACTIVE tab scrolls back to the top (like
-   *  budget-tracker); tapping another tab restores where you were in it. */
+  /** Dock tap. Active tab: first tap pops back to the tab's root (e.g. the
+   *  More menu from a sub-section), tap again to scroll to top. Other tab:
+   *  Home restores where you were; every other tab opens at its root. */
   const goTab = (id: Tab) => {
     if (id === tab) {
-      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      if (router.route.length > 1) router.navigate(id);
+      else mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    router.navigate(lastRoutes.current[id] ?? id);
+    router.navigate(id === 'home' ? lastHomeRoute.current : id);
   };
 
   // --- dock touch handling -------------------------------------------------

@@ -16,9 +16,12 @@ export default function MoreView({ router }: { router: Router }) {
   if (sub !== 'menu') {
     return (
       <div className="space-y-3">
-        {/* history.back() (not a forward navigation) so swipe-back and this
-            button do exactly the same thing */}
-        <button onClick={router.back} className="text-sm font-medium text-red-700 dark:text-red-400">
+        {/* Always go straight to the More menu — history.back() could land on
+            another tab if the sub-section was restored/deep-linked. */}
+        <button
+          onClick={() => router.navigate('more')}
+          className="text-sm font-medium text-red-700 dark:text-red-400"
+        >
           ← {t('moreTitle')}
         </button>
         {sub === 'expenses' && <ExpensesView />}

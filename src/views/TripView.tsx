@@ -18,12 +18,12 @@ export default function TripView({ router }: { router: Router }) {
   const today = todayIso();
   const locale = lang === 'es' ? 'es' : 'en-US';
 
+  // Spanish dates come out all-lowercase ("mié, 5 ago") — capitalize each
+  // word so they read like the English ones ("Mié, 5 Ago").
   const fmtDate = (iso: string) =>
-    new Date(iso + 'T12:00:00').toLocaleDateString(locale, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
+    new Date(iso + 'T12:00:00')
+      .toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })
+      .replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase());
 
   // ---- header: countdown before the trip, progress during/after ----
   const msPerDay = 86400000;
