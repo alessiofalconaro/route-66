@@ -33,7 +33,12 @@ function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): num
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-export function nearestCityId(lat: number, lon: number): string {
+export interface NearestCity {
+  cityId: string;
+  km: number; // distance from the user — lets the caller say "you're far away"
+}
+
+export function nearestCity(lat: number, lon: number): NearestCity {
   let best = CITY_POINTS[0];
   let bestDist = Infinity;
   for (const p of CITY_POINTS) {
@@ -43,22 +48,24 @@ export function nearestCityId(lat: number, lon: number): string {
       best = p;
     }
   }
-  return best.cityId;
+  return { cityId: best.cityId, km: bestDist };
 }
 
 /**
  * Asks the browser for the current position, then resolves with the nearest
- * overnight city id — or null on any failure (denied, timeout, offline GPS).
- * The caller must treat null as "no suggestion", never as an error.
+ * overnight city + its distance — or null on any failure (denied, timeout).
+ * The caller must treat null as "no suggestion", never as an error, and
+ * should check `km` before trusting the match (in Rome the nearest stop is
+ * still "Chicago", 7000+ km away!).
  */
-export function detectNearestCity(): Promise<string | null> {
+export function detectNearestCity(): Promise<NearestCity | null> {
   return new Promise((resolve) => {
     if (!('geolocation' in navigator)) {
       resolve(null);
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve(nearestCityId(pos.coords.latitude, pos.coords.longitude)),
+      (pos) => resolve(nearestCity(pos.coords.latitude, pos.coords.longitude)),
       () => resolve(null), // permission denied or unavailable → just no suggestion
       { timeout: 8000, maximumAge: 5 * 60 * 1000 },
     );

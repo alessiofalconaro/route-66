@@ -4,7 +4,7 @@
 // finger across the tabs, and a mostly-VERTICAL gesture (e.g. the iOS swipe-up
 // to go to the home screen) or a system-interrupted touch (touchcancel) never
 // changes tab by accident.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n, type TKey } from './i18n';
 import { useTravelers } from './lib/travelers';
 import { useHashRoute } from './lib/router';
@@ -31,6 +31,26 @@ export default function App() {
 
   // Current tab = first segment of the hash route (#/hotels → 'hotels').
   const tab: Tab = (TABS.find((tb) => tb.id === router.route[0])?.id ?? 'home') as Tab;
+
+  // Remember the deepest route seen per tab, so tapping "Home" from Hotels
+  // brings you back to the city/leg you were looking at, not to a blank Home.
+  const lastRoutes = useRef<Record<string, string>>({});
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (router.route.length > 0) {
+      lastRoutes.current[router.route[0]] = router.route.join('/');
+    }
+  }, [router.route]);
+
+  /** Dock tap: re-tapping the ACTIVE tab scrolls back to the top (like
+   *  budget-tracker); tapping another tab restores where you were in it. */
+  const goTab = (id: Tab) => {
+    if (id === tab) {
+      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    router.navigate(lastRoutes.current[id] ?? id);
+  };
 
   // --- dock touch handling -------------------------------------------------
   const pillRef = useRef<HTMLDivElement>(null);
@@ -92,7 +112,7 @@ export default function App() {
       return;
     }
     const p = previewRef.current;
-    if (p !== null) router.navigate(TABS[p].id);
+    if (p !== null) goTab(TABS[p].id);
     setPrev(null);
   };
 
@@ -109,7 +129,7 @@ export default function App() {
    *  is ignored — the touch handler already navigated. */
   const clickTab = (id: Tab) => {
     if (gesture.current.suppressClick) return;
-    router.navigate(id);
+    goTab(id);
   };
 
   return (
@@ -123,7 +143,10 @@ export default function App() {
 
       {/* THE only scrolling element (document scroll is locked in index.css).
           Bottom padding clears the dock; content scrolls under the glass. */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-32">
+      <main
+        ref={mainRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-32"
+      >
         {tab === 'home' && <HomeView router={router} />}
         {tab === 'hotels' && <HotelsView />}
         {tab === 'fuel' && <FuelView />}

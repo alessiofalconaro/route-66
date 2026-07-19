@@ -19,7 +19,9 @@ export default function HotelCard({ hotel }: { hotel: Hotel }) {
             className="w-20 h-20 rounded-lg object-cover shrink-0"
           />
         ) : (
-          <span className="text-2xl">🛏️</span>
+          <div className="w-20 h-20 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-4xl shrink-0">
+            🛏️
+          </div>
         )}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold leading-snug">{hotel.name}</h3>

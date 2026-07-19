@@ -1,6 +1,7 @@
 // "More" hub: shared album link, expenses, shopping list, checklist,
 // emergency, settings. Sub-screens live in the hash (#/more/expenses) so the
 // back gesture returns to this menu. All of it works offline.
+import { useState } from 'react';
 import { useI18n, type TKey } from '../i18n';
 import { usePersistentState } from '../lib/storage';
 import type { Router } from '../lib/router';
@@ -106,18 +107,117 @@ function CheckList({ storageKey, items }: { storageKey: string; items: { id: str
   );
 }
 
-// --- Shopping list: things to buy on arrival in Chicago ---
+// --- Shopping list: things to buy on arrival in Chicago (fully editable) ---
+// Default items reference an i18n key (so they follow the EN/ES toggle);
+// user-added items store their own free text.
+interface ShopItem {
+  id: string;
+  key?: TKey; // default item → translated live
+  label?: string; // custom item → fixed text
+}
+
+const DEFAULT_SHOPPING: ShopItem[] = [
+  'shop1', 'shop2', 'shop3', 'shop4', 'shop5',
+  'shop6', 'shop7', 'shop8', 'shop9', 'shop10',
+].map((k) => ({ id: k, key: k as TKey }));
+
 function ShoppingView() {
   const { t } = useI18n();
-  const keys: TKey[] = [
-    'shop1', 'shop2', 'shop3', 'shop4', 'shop5',
-    'shop6', 'shop7', 'shop8', 'shop9', 'shop10',
-  ];
+  const [items, setItems] = usePersistentState<ShopItem[]>('shoppingItems', DEFAULT_SHOPPING);
+  const [done, setDone] = usePersistentState<string[]>('shopping', []);
+  const [editing, setEditing] = useState(false);
+  const [newText, setNewText] = useState('');
+
+  const labelOf = (it: ShopItem) => it.label ?? (it.key ? t(it.key) : '');
+  const toggle = (id: string) =>
+    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+  const remove = (id: string) => {
+    setItems((list) => list.filter((it) => it.id !== id));
+    setDone((d) => d.filter((x) => x !== id));
+  };
+  const move = (idx: number, dir: -1 | 1) =>
+    setItems((list) => {
+      const target = idx + dir;
+      if (target < 0 || target >= list.length) return list;
+      const copy = [...list];
+      [copy[idx], copy[target]] = [copy[target], copy[idx]];
+      return copy;
+    });
+  const add = () => {
+    const text = newText.trim();
+    if (!text) return;
+    setItems((list) => [...list, { id: `s-${crypto.randomUUID()}`, label: text }]);
+    setNewText('');
+  };
+
   return (
     <div className="space-y-3">
-      <h1 className="text-xl font-bold">🛒 {t('shoppingTitle')}</h1>
-      <p className="text-xs text-stone-500 dark:text-stone-400">{t('shoppingHint')}</p>
-      <CheckList storageKey="shopping" items={keys.map((k) => ({ id: k, label: t(k) }))} />
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <h1 className="text-xl font-bold">🛒 {t('shoppingTitle')}</h1>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t('shoppingHint')}</p>
+        </div>
+        <button
+          onClick={() => setEditing((e) => !e)}
+          className={`text-sm font-medium rounded-lg px-3 py-1.5 ${
+            editing ? 'bg-red-700 text-white' : 'bg-stone-200 dark:bg-stone-700'
+          }`}
+        >
+          {editing ? t('doneEditing') : `✏️ ${t('editItinerary')}`}
+        </button>
+      </div>
+
+      {items.map((it, idx) => (
+        <div
+          key={it.id}
+          className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-center gap-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            checked={done.includes(it.id)}
+            onChange={() => toggle(it.id)}
+            className="w-5 h-5 accent-red-700 shrink-0"
+          />
+          <span
+            className={`flex-1 min-w-0 ${
+              done.includes(it.id) ? 'line-through text-stone-400' : ''
+            }`}
+          >
+            {labelOf(it)}
+          </span>
+          {editing && (
+            <span className="flex gap-1 shrink-0">
+              <button onClick={() => move(idx, -1)} aria-label={t('moveUp')} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700">
+                ↑
+              </button>
+              <button onClick={() => move(idx, 1)} aria-label={t('moveDown')} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700">
+                ↓
+              </button>
+              <button onClick={() => remove(it.id)} aria-label={t('removeStop')} className="px-2 py-1 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300">
+                🗑️
+              </button>
+            </span>
+          )}
+        </div>
+      ))}
+
+      {/* Add a new item (Enter or the + button) */}
+      <div className="flex gap-2">
+        <input
+          className="flex-1 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm"
+          value={newText}
+          onChange={(e) => setNewText(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          placeholder={t('addItem')}
+        />
+        <button
+          onClick={add}
+          disabled={!newText.trim()}
+          className="rounded-lg bg-red-700 text-white px-4 text-sm font-medium disabled:opacity-50"
+        >
+          ＋
+        </button>
+      </div>
     </div>
   );
 }

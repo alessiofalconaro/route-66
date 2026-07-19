@@ -30,23 +30,24 @@ interface Props {
 export default function PoiCard({ poi, editing, onEdit, onRemove, onMoveUp, onMoveDown }: Props) {
   const { t } = useI18n();
 
+  // Photo: explicit poi.photo, else the bundled Wikipedia image for this id.
+  // BASE_URL = '/route-66/' on GitHub Pages.
+  const photo =
+    poi.photo ?? (PHOTOS[poi.id] ? import.meta.env.BASE_URL + PHOTOS[poi.id] : undefined);
+
   return (
     <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex gap-3">
-      {/* Photo: explicit poi.photo, else the bundled Wikipedia image for this
-          id, else the category emoji. BASE_URL = '/route-66/' on Pages. */}
-      {(() => {
-        const src =
-          poi.photo ?? (PHOTOS[poi.id] ? import.meta.env.BASE_URL + PHOTOS[poi.id] : undefined);
-        return src ? (
-          <img
-            src={src}
-            alt={poi.name}
-            loading="lazy"
-            className="w-20 h-20 rounded-lg object-cover shrink-0"
-          />
-        ) : null;
-      })() ?? (
-        <div className="w-16 h-16 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl shrink-0">
+      {/* Photo if we have one, category emoji otherwise — both in the same
+          20×20 box so every card lines up identically */}
+      {photo ? (
+        <img
+          src={photo}
+          alt={poi.name}
+          loading="lazy"
+          className="w-20 h-20 rounded-lg object-cover shrink-0"
+        />
+      ) : (
+        <div className="w-20 h-20 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-4xl shrink-0">
           {CATEGORY_ICON[poi.category]}
         </div>
       )}

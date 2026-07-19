@@ -9,10 +9,15 @@ import { useI18n } from '../i18n';
 import CityView from '../components/CityView';
 import SegmentView from '../components/SegmentView';
 
+// If the nearest overnight stop is farther than this, the user is simply not
+// on the route yet (e.g. still at home in Europe) — suggesting it would be wrong.
+const FAR_KM = 250;
+
 export default function HomeView({ router }: { router: Router }) {
   const { t } = useI18n();
   const [locating, setLocating] = useState(false);
   const [locationFailed, setLocationFailed] = useState(false);
+  const [farAway, setFarAway] = useState<{ label: string; km: number } | null>(null);
 
   // Route shape: ['home'] | ['home','city',<id>] | ['home','leg',<id>]
   const mode = router.route[1]; // 'city' | 'leg' | undefined
@@ -21,17 +26,22 @@ export default function HomeView({ router }: { router: Router }) {
   const useLocation = async () => {
     setLocating(true);
     setLocationFailed(false);
-    const cityId = await detectNearestCity(); // null on any failure
+    setFarAway(null);
+    const near = await detectNearestCity(); // null on any failure
     setLocating(false);
-    if (cityId) {
-      router.navigate(`home/city/${cityId}`);
-    } else {
+    if (!near) {
       setLocationFailed(true);
+    } else if (near.km > FAR_KM) {
+      const label = CITIES.find((c) => c.id === near.cityId)?.label ?? near.cityId;
+      setFarAway({ label, km: Math.round(near.km) });
+    } else {
+      router.navigate(`home/city/${near.cityId}`);
     }
   };
 
+  // mt-1.5 = a bit of air between each label text and its dropdown
   const select =
-    'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm';
+    'mt-1.5 w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2.5 text-sm';
 
   return (
     <div className="space-y-4">
@@ -80,6 +90,12 @@ export default function HomeView({ router }: { router: Router }) {
         </button>
         {locationFailed && (
           <p className="text-xs text-stone-500 dark:text-stone-400">{t('locationFailed')}</p>
+        )}
+        {farAway && (
+          <div className="rounded-lg bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
+            ✈️ {t('locationFar')} <strong>{farAway.label}</strong> (~
+            {farAway.km.toLocaleString()} km)
+          </div>
         )}
       </div>
 
