@@ -15,6 +15,7 @@ export default function SettingsView() {
   const { theme, setTheme } = useTheme();
   const { travelers, rename, whoAmI, setWhoAmI } = useTravelers();
   const [albumUrl, setAlbumUrl] = usePersistentState<string>('albumUrl', '');
+  const [campAlbumUrl, setCampAlbumUrl] = usePersistentState<string>('campAlbumUrl', '');
   const [tripPin, setTripPin] = usePersistentState<string>('tripPin', '');
   // PIN verification: explicit — the check runs only when the user taps
   // "Confirm PIN". Once verified, the field locks; "Change PIN" unlocks it.
@@ -198,6 +199,14 @@ export default function SettingsView() {
           onChange={(e) => setAlbumUrl(e.target.value)}
         />
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('albumUrlHint')}</p>
+        <h3 className="font-semibold text-sm pt-1">📷 {t('campAlbumUrl')}</h3>
+        <input
+          className={input}
+          type="url"
+          placeholder="https://photos.app.goo.gl/…"
+          value={campAlbumUrl}
+          onChange={(e) => setCampAlbumUrl(e.target.value)}
+        />
       </div>
 
       {/* Trip PIN — unlocks the sync on this phone */}

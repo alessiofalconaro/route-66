@@ -13,6 +13,7 @@ export default function MoreView({ router }: { router: Router }) {
   const { t } = useI18n();
   const sub = router.route[1] ?? 'menu';
   const [albumUrl] = usePersistentState<string>('albumUrl', '');
+  const [campAlbumUrl] = usePersistentState<string>('campAlbumUrl', '');
 
   if (sub !== 'menu') {
     return (
@@ -56,6 +57,20 @@ export default function MoreView({ router }: { router: Router }) {
           <p className="font-medium">📸 {t('albumButton')}</p>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">{t('albumNotSet')}</p>
         </div>
+      )}
+
+      {/* Second shared album: full-res Camp Snap photos (Falco's camera).
+          Hosting them in-app is impossible within the $0 rules — Google
+          Photos stores them, the app is the front door. */}
+      {campAlbumUrl && (
+        <a
+          href={campAlbumUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full rounded-xl bg-stone-800 dark:bg-stone-700 text-white shadow-sm p-4 text-left font-medium flex items-center gap-3"
+        >
+          📷 {t('campAlbumButton')}
+        </a>
       )}
 
       <button onClick={() => router.navigate('more/expenses')} className={item}>
