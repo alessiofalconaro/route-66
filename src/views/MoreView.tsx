@@ -1,25 +1,27 @@
-// "More" hub: shared album link, expenses, checklist, emergency, settings.
-// All of it works offline (the album link just needs signal when tapped).
-import { useState } from 'react';
-import { useI18n } from '../i18n';
+// "More" hub: shared album link, expenses, shopping list, checklist,
+// emergency, settings. Sub-screens live in the hash (#/more/expenses) so the
+// back gesture returns to this menu. All of it works offline.
+import { useI18n, type TKey } from '../i18n';
 import { usePersistentState } from '../lib/storage';
+import type { Router } from '../lib/router';
 import ExpensesView from './ExpensesView';
 import SettingsView from './SettingsView';
 
-type SubView = 'menu' | 'expenses' | 'checklist' | 'emergency' | 'settings';
-
-export default function MoreView() {
+export default function MoreView({ router }: { router: Router }) {
   const { t } = useI18n();
-  const [sub, setSub] = useState<SubView>('menu');
+  const sub = router.route[1] ?? 'menu';
   const [albumUrl] = usePersistentState<string>('albumUrl', '');
 
   if (sub !== 'menu') {
     return (
       <div className="space-y-3">
-        <button onClick={() => setSub('menu')} className="text-sm font-medium text-red-700 dark:text-red-400">
+        {/* history.back() (not a forward navigation) so swipe-back and this
+            button do exactly the same thing */}
+        <button onClick={router.back} className="text-sm font-medium text-red-700 dark:text-red-400">
           ← {t('moreTitle')}
         </button>
         {sub === 'expenses' && <ExpensesView />}
+        {sub === 'shopping' && <ShoppingView />}
         {sub === 'checklist' && <ChecklistView />}
         {sub === 'emergency' && <EmergencyView />}
         {sub === 'settings' && <SettingsView />}
@@ -51,10 +53,21 @@ export default function MoreView() {
         </div>
       )}
 
-      <button onClick={() => setSub('expenses')} className={item}>💵 {t('expensesTitle')}</button>
-      <button onClick={() => setSub('checklist')} className={item}>✅ {t('checklistTitle')}</button>
-      <button onClick={() => setSub('emergency')} className={item}>🚨 {t('emergencyTitle')}</button>
-      <button onClick={() => setSub('settings')} className={item}>⚙️ {t('settingsTitle')}</button>
+      <button onClick={() => router.navigate('more/expenses')} className={item}>
+        💵 {t('expensesTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/shopping')} className={item}>
+        🛒 {t('shoppingTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/checklist')} className={item}>
+        ✅ {t('checklistTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/emergency')} className={item}>
+        🚨 {t('emergencyTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/settings')} className={item}>
+        ⚙️ {t('settingsTitle')}
+      </button>
 
       {/* Static desert-heat warning (from the itinerary, no API) */}
       <div className="rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
@@ -65,9 +78,54 @@ export default function MoreView() {
   );
 }
 
-// --- Pre-departure checklist (persisted checkboxes) ---
+// --- Reusable persisted checklist (checkbox list saved in localStorage) ---
+function CheckList({ storageKey, items }: { storageKey: string; items: { id: string; label: string }[] }) {
+  const [done, setDone] = usePersistentState<string[]>(storageKey, []);
+  const toggle = (id: string) =>
+    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+
+  return (
+    <>
+      {items.map((it) => (
+        <label
+          key={it.id}
+          className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-start gap-3 text-sm"
+        >
+          <input
+            type="checkbox"
+            checked={done.includes(it.id)}
+            onChange={() => toggle(it.id)}
+            className="mt-0.5 w-5 h-5 accent-red-700"
+          />
+          <span className={done.includes(it.id) ? 'line-through text-stone-400' : ''}>
+            {it.label}
+          </span>
+        </label>
+      ))}
+    </>
+  );
+}
+
+// --- Shopping list: things to buy on arrival in Chicago ---
+function ShoppingView() {
+  const { t } = useI18n();
+  const keys: TKey[] = [
+    'shop1', 'shop2', 'shop3', 'shop4', 'shop5',
+    'shop6', 'shop7', 'shop8', 'shop9', 'shop10',
+  ];
+  return (
+    <div className="space-y-3">
+      <h1 className="text-xl font-bold">🛒 {t('shoppingTitle')}</h1>
+      <p className="text-xs text-stone-500 dark:text-stone-400">{t('shoppingHint')}</p>
+      <CheckList storageKey="shopping" items={keys.map((k) => ({ id: k, label: t(k) }))} />
+    </div>
+  );
+}
+
+// --- Pre-departure checklist ---
 function ChecklistView() {
   const { t } = useI18n();
+  // ids stay the same as the first release so saved ticks are not lost
   const items = [
     { id: 'idp', label: t('chkIdp') },
     { id: 'card', label: t('chkCard') },
@@ -75,24 +133,10 @@ function ChecklistView() {
     { id: 'parkpass', label: t('chkParkPass') },
     { id: 'water', label: t('chkWater') },
   ];
-  const [done, setDone] = usePersistentState<string[]>('checklist', []);
-  const toggle = (id: string) =>
-    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
-
   return (
     <div className="space-y-3">
       <h1 className="text-xl font-bold">✅ {t('checklistTitle')}</h1>
-      {items.map((it) => (
-        <label key={it.id} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-start gap-3 text-sm">
-          <input
-            type="checkbox"
-            checked={done.includes(it.id)}
-            onChange={() => toggle(it.id)}
-            className="mt-0.5 w-5 h-5 accent-red-700"
-          />
-          <span className={done.includes(it.id) ? 'line-through text-stone-400' : ''}>{it.label}</span>
-        </label>
-      ))}
+      <CheckList storageKey="checklist" items={items} />
     </div>
   );
 }

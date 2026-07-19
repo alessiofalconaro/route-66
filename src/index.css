@@ -9,22 +9,65 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ---- App-shell scroll lock (ported from budget-tracker) ----
+   The DOCUMENT never scrolls: only <main> does. This is what keeps the
+   bottom dock truly anchored on iOS — position:fixed elements jump around
+   when the body itself scrolls / rubber-bands. */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 html {
-  /* Prevent iOS Safari from auto-zooming inputs and bouncing */
+  /* Prevent iOS Safari from auto-zooming inputs and double-tap zooming */
   -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
   @apply bg-stone-100 text-stone-900 dark:bg-stone-950 dark:text-stone-100;
 }
 
+/* Font size ≥16px in form fields or iOS zooms in when they get focus. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* iOS gives date inputs an intrinsic width that overflows the card and
+   caused a horizontal scroll of the whole page. Kill both. */
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* ---- Bottom dock: "liquid glass" bar (style ported from budget-tracker) ----
-   The glass reaches the physical bottom of the screen; the iPhone home-indicator
-   safe-area is INTERNAL padding filled by the glass → no dark band below. */
+   .dock = positioning only (plain CSS so no utility-layer conflicts);
+   .dock-pill = the glass. The glass reaches the physical bottom of the
+   screen; the home-indicator safe-area is INTERNAL padding filled by the
+   glass → no dark band below. */
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+}
+
 .dock-pill {
   position: relative;
   display: flex;
   align-items: stretch;
+  width: 100%;
+  max-width: 32rem; /* matches the app column (max-w-lg) on desktop */
   padding: 8px 10px calc(8px + var(--safe-bottom));
   border-radius: 26px 26px 0 0;
   background: rgb(250 250 249 / 0.72); /* stone-50 at 72% */

@@ -1,4 +1,5 @@
-// Root component: liquid-glass bottom dock + first-run "who am I" picker.
+// Root component: app shell (only <main> scrolls), liquid-glass bottom dock,
+// hash routing (swipe-back works) and the first-run "who am I" picker.
 // Dock behavior ported from budget-tracker: a sliding indicator follows the
 // finger across the tabs, and a mostly-VERTICAL gesture (e.g. the iOS swipe-up
 // to go to the home screen) or a system-interrupted touch (touchcancel) never
@@ -6,6 +7,7 @@
 import { useRef, useState } from 'react';
 import { useI18n, type TKey } from './i18n';
 import { useTravelers } from './lib/travelers';
+import { useHashRoute } from './lib/router';
 import HomeView from './views/HomeView';
 import HotelsView from './views/HotelsView';
 import FuelView from './views/FuelView';
@@ -25,10 +27,13 @@ const TABS: { id: Tab; icon: string; labelKey: TKey }[] = [
 export default function App() {
   const { t } = useI18n();
   const { travelers, whoAmI, setWhoAmI, nameOf } = useTravelers();
-  const [tab, setTab] = useState<Tab>('home');
+  const router = useHashRoute();
+
+  // Current tab = first segment of the hash route (#/hotels → 'hotels').
+  const tab: Tab = (TABS.find((tb) => tb.id === router.route[0])?.id ?? 'home') as Tab;
 
   // --- dock touch handling -------------------------------------------------
-  const navRef = useRef<HTMLElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
   // preview = tab highlighted while the finger is down (null = none).
   // Kept both in state (to render) and in a ref (to read inside handlers).
   const [preview, setPreview] = useState<number | null>(null);
@@ -44,7 +49,7 @@ export default function App() {
 
   /** Which tab sits under this X coordinate (tabs are equal-width slots). */
   const idxAtX = (clientX: number): number => {
-    const el = navRef.current;
+    const el = pillRef.current;
     if (!el) return activeIdx;
     const r = el.getBoundingClientRect();
     const slot = (r.width - 20) / TABS.length; // 10px padding each side
@@ -87,7 +92,7 @@ export default function App() {
       return;
     }
     const p = previewRef.current;
-    if (p !== null) setTab(TABS[p].id);
+    if (p !== null) router.navigate(TABS[p].id);
     setPrev(null);
   };
 
@@ -104,58 +109,61 @@ export default function App() {
    *  is ignored — the touch handler already navigated. */
   const clickTab = (id: Tab) => {
     if (gesture.current.suppressClick) return;
-    setTab(id);
+    router.navigate(id);
   };
 
   return (
-    <div className="min-h-dvh flex flex-col max-w-lg mx-auto">
+    <div className="h-full flex flex-col max-w-lg mx-auto">
       {/* Greeting bar (cosmetic use of "who am I") */}
       {whoAmI && (
-        <p className="text-xs text-stone-500 dark:text-stone-400 px-4 pt-2">
+        <p className="text-xs text-stone-500 dark:text-stone-400 px-4 pt-2 shrink-0">
           {t('greeting')}, {nameOf(whoAmI)}! 👋
         </p>
       )}
 
-      {/* Main content; bottom padding clears the dock */}
-      <main className="flex-1 p-4 pb-28">
-        {tab === 'home' && <HomeView />}
+      {/* THE only scrolling element (document scroll is locked in index.css).
+          Bottom padding clears the dock; content scrolls under the glass. */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-4 pb-32">
+        {tab === 'home' && <HomeView router={router} />}
         {tab === 'hotels' && <HotelsView />}
         {tab === 'fuel' && <FuelView />}
         {tab === 'chat' && <ChatView />}
-        {tab === 'more' && <MoreView />}
+        {tab === 'more' && <MoreView router={router} />}
       </main>
 
-      {/* Liquid-glass bottom dock */}
-      <nav
-        ref={navRef}
-        className="dock-pill fixed bottom-0 inset-x-0 z-40 max-w-lg mx-auto"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={onTouchCancel}
-      >
-        {/* sliding indicator: width = one slot, translateX = slot index */}
-        <span
-          className="dock-ind"
-          style={{
-            width: `calc((100% - 20px) / ${TABS.length})`,
-            transform: `translateX(${shownIdx * 100}%)`,
-          }}
-        />
-        {TABS.map((tb, i) => (
-          <button
-            key={tb.id}
-            onClick={() => clickTab(tb.id)}
-            className={`relative z-10 flex-1 py-2 flex flex-col items-center gap-0.5 text-[11px] font-medium transition-colors ${
-              i === shownIdx
-                ? 'text-red-700 dark:text-red-400'
-                : 'text-stone-500 dark:text-stone-400'
-            }`}
-          >
-            <span className="text-xl leading-none">{tb.icon}</span>
-            {t(tb.labelKey)}
-          </button>
-        ))}
+      {/* Liquid-glass bottom dock (fixed, full width, safe-area inside) */}
+      <nav className="dock">
+        <div
+          ref={pillRef}
+          className="dock-pill"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onTouchCancel={onTouchCancel}
+        >
+          {/* sliding indicator: width = one slot, translateX = slot index */}
+          <span
+            className="dock-ind"
+            style={{
+              width: `calc((100% - 20px) / ${TABS.length})`,
+              transform: `translateX(${shownIdx * 100}%)`,
+            }}
+          />
+          {TABS.map((tb, i) => (
+            <button
+              key={tb.id}
+              onClick={() => clickTab(tb.id)}
+              className={`relative z-10 flex-1 py-2.5 flex flex-col items-center gap-1 text-xs font-semibold transition-colors ${
+                i === shownIdx
+                  ? 'text-red-700 dark:text-red-400'
+                  : 'text-stone-500 dark:text-stone-400'
+              }`}
+            >
+              <span className="text-2xl leading-none">{tb.icon}</span>
+              {t(tb.labelKey)}
+            </button>
+          ))}
+        </div>
       </nav>
 
       {/* First-run: pick which traveler uses this phone */}

@@ -1,20 +1,22 @@
 // Home: "Where are we?" — pick a city or a driving leg (or use GPS).
+// The selection lives in the URL hash (#/home/city/tulsa) so the browser's
+// back gesture returns from a city/leg view to the pickers.
 import { useState } from 'react';
 import { CITIES, LEGS, segmentById } from '../data/tripData';
 import { detectNearestCity } from '../lib/geo';
+import type { Router } from '../lib/router';
 import { useI18n } from '../i18n';
 import CityView from '../components/CityView';
 import SegmentView from '../components/SegmentView';
 
-// The current selection: either a city or a leg (a "discriminated union" —
-// the `mode` field tells TypeScript which shape the object has).
-type Selection = { mode: 'city'; id: string } | { mode: 'leg'; id: string } | null;
-
-export default function HomeView() {
+export default function HomeView({ router }: { router: Router }) {
   const { t } = useI18n();
-  const [selection, setSelection] = useState<Selection>(null);
   const [locating, setLocating] = useState(false);
   const [locationFailed, setLocationFailed] = useState(false);
+
+  // Route shape: ['home'] | ['home','city',<id>] | ['home','leg',<id>]
+  const mode = router.route[1]; // 'city' | 'leg' | undefined
+  const selectedId = router.route[2];
 
   const useLocation = async () => {
     setLocating(true);
@@ -22,7 +24,7 @@ export default function HomeView() {
     const cityId = await detectNearestCity(); // null on any failure
     setLocating(false);
     if (cityId) {
-      setSelection({ mode: 'city', id: cityId });
+      router.navigate(`home/city/${cityId}`);
     } else {
       setLocationFailed(true);
     }
@@ -45,8 +47,8 @@ export default function HomeView() {
           🏙️ {t('inACity')}
           <select
             className={select}
-            value={selection?.mode === 'city' ? selection.id : ''}
-            onChange={(e) => e.target.value && setSelection({ mode: 'city', id: e.target.value })}
+            value={mode === 'city' ? selectedId : ''}
+            onChange={(e) => e.target.value && router.navigate(`home/city/${e.target.value}`)}
           >
             <option value="">{t('chooseCity')}</option>
             {CITIES.map((c) => (
@@ -59,8 +61,8 @@ export default function HomeView() {
           🚗 {t('drivingLeg')}
           <select
             className={select}
-            value={selection?.mode === 'leg' ? selection.id : ''}
-            onChange={(e) => e.target.value && setSelection({ mode: 'leg', id: e.target.value })}
+            value={mode === 'leg' ? selectedId : ''}
+            onChange={(e) => e.target.value && router.navigate(`home/leg/${e.target.value}`)}
           >
             <option value="">{t('chooseLeg')}</option>
             {LEGS.map((l) => (
@@ -82,9 +84,9 @@ export default function HomeView() {
       </div>
 
       {/* Render the selected view */}
-      {selection?.mode === 'city' && <CityView cityId={selection.id} />}
-      {selection?.mode === 'leg' && (() => {
-        const seg = segmentById(selection.id);
+      {mode === 'city' && selectedId && <CityView cityId={selectedId} />}
+      {mode === 'leg' && selectedId && (() => {
+        const seg = segmentById(selectedId);
         return seg ? <SegmentView segment={seg} /> : null;
       })()}
     </div>
