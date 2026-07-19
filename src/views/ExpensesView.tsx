@@ -19,19 +19,25 @@ import {
 } from '../lib/expenseSync';
 import { useI18n, type TKey } from '../i18n';
 
-const DEFAULT_CATEGORIES: { value: string; labelKey: TKey }[] = [
-  { value: 'fuel', labelKey: 'catFuel' },
-  { value: 'hotel', labelKey: 'catHotel' },
-  { value: 'food', labelKey: 'catFood' },
-  { value: 'tickets', labelKey: 'catTickets' },
-  { value: 'souvenirs', labelKey: 'catSouvenirs' },
-  { value: 'other', labelKey: 'catOther' },
+const DEFAULT_CATEGORIES: { value: string; labelKey: TKey; emoji: string }[] = [
+  { value: 'fuel', labelKey: 'catFuel', emoji: '⛽' },
+  { value: 'hotel', labelKey: 'catHotel', emoji: '🛏️' },
+  { value: 'food', labelKey: 'catFood', emoji: '🍔' },
+  { value: 'tickets', labelKey: 'catTickets', emoji: '🎟️' },
+  { value: 'souvenirs', labelKey: 'catSouvenirs', emoji: '🛍️' },
+  { value: 'other', labelKey: 'catOther', emoji: '📦' },
 ];
+
+/** True if the text already starts with an emoji (then we don't add one). */
+export function startsWithEmoji(text: string): boolean {
+  return /^\p{Extended_Pictographic}/u.test(text);
+}
 
 /**
  * Category list = the 6 translated defaults + the user's custom ones
  * (persisted in localStorage) + any category found in `inUse` (so custom
  * categories arriving via sync from another phone show up here too).
+ * All rendered as "emoji name", sorted alphabetically by name.
  */
 function useCategoryOptions(inUse: string[]) {
   const { t } = useI18n();
@@ -39,16 +45,20 @@ function useCategoryOptions(inUse: string[]) {
 
   const labelOf = (value: string) => {
     const def = DEFAULT_CATEGORIES.find((c) => c.value === value);
-    return def ? t(def.labelKey) : value; // custom categories ARE their label
+    if (def) return `${def.emoji} ${t(def.labelKey)}`;
+    return startsWithEmoji(value) ? value : `🏷️ ${value}`;
   };
 
   const customAll = [
     ...new Set([...custom, ...inUse.filter((v) => !DEFAULT_CATEGORIES.some((c) => c.value === v))]),
   ];
   const options = [
-    ...DEFAULT_CATEGORIES.map((c) => ({ value: c.value, label: t(c.labelKey) })),
-    ...customAll.map((v) => ({ value: v, label: v })),
-  ];
+    ...DEFAULT_CATEGORIES.map((c) => ({ value: c.value, name: t(c.labelKey) })),
+    ...customAll.map((v) => ({ value: v, name: v })),
+  ]
+    .sort((a, b) => a.name.localeCompare(b.name)) // defaults and custom mixed, A→Z
+    .map((c) => ({ value: c.value, label: labelOf(c.value) }));
+
   const addCustom = (label: string) =>
     setCustom((list) => (list.includes(label) ? list : [...list, label]));
 

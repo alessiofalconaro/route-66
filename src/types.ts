@@ -20,7 +20,8 @@ export interface Poi {
   id: string;
   name: string;
   city: string; // e.g. "Chicago, IL"
-  category: Category;
+  // One of the default Category ids, or a custom label the user created.
+  category: Category | (string & {});
   dwellMinutes?: number; // "?" = optional field (Java analogy: Optional<Integer>)
   note?: string;
   mapsQuery: string; // used to build the Google Maps URL

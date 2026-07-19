@@ -3,6 +3,7 @@
 // Read-only by design — those POIs are edited on their own leg.
 import { CITY_SEGMENT, HOTELS, SEGMENTS, segmentById } from '../data/tripData';
 import { mergePois, useOverrides } from '../lib/overrides';
+import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
 import HotelCard from './HotelCard';
@@ -12,6 +13,7 @@ import SegmentView from './SegmentView';
 export default function CityView({ cityId }: { cityId: string }) {
   const { t } = useI18n();
   const { overrides } = useOverrides();
+  const { isVisited, toggleVisited } = useVisited();
 
   // Chicago, Springdale (Zion day) and LA have full segments — reuse them.
   const dedicated = segmentById(CITY_SEGMENT[cityId]);
@@ -45,7 +47,14 @@ export default function CityView({ cityId }: { cityId: string }) {
       {pois.length === 0 ? (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('emptyCityHint')}</p>
       ) : (
-        pois.map((p) => <PoiCard key={p.id} poi={p} />)
+        pois.map((p) => (
+          <PoiCard
+            key={p.id}
+            poi={p}
+            visited={isVisited(p.id)}
+            onToggleVisited={() => toggleVisited(p.id)}
+          />
+        ))
       )}
     </div>
   );

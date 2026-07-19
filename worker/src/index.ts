@@ -225,24 +225,36 @@ export default {
       `(Chicago to Los Angeles, August 2026, three friends in a rental car). ` +
       `The travelers are currently on this part of the trip: "${body.segmentLabel}". ` +
       `Suggest sights, food and quick stops near that area. Keep answers short ` +
-      `(under 200 words), no markdown tables. Answer in ${langName}.`;
+      `(under 200 words), no markdown tables. Answer in ${langName}. ` +
+      `ACCURACY RULES: never invent attractions, addresses, filming locations, ` +
+      `opening hours or prices. If you are not certain something exists or is ` +
+      `really located where the user asks, say you are not sure instead of ` +
+      `guessing, and recommend verifying on the spot. Movie/TV filming ` +
+      `locations are a common trap: only mention ones you are confident about, ` +
+      `including the real city they are in.`;
 
     // Call Groq (OpenAI-compatible API). The key exists ONLY here.
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.GROQ_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'system', content: system }, ...body.messages],
-        max_tokens: 500,
-        temperature: 0.7,
-      }),
-    });
+    // Try the strongest free model first, fall back if it's unavailable.
+    const MODELS = ['moonshotai/kimi-k2-instruct', 'llama-3.3-70b-versatile'];
+    let groqRes: Response | null = null;
+    for (const model of MODELS) {
+      groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'system', content: system }, ...body.messages],
+          max_tokens: 500,
+          temperature: 0.4, // lower = fewer creative "inventions"
+        }),
+      });
+      if (groqRes.ok) break;
+    }
 
-    if (!groqRes.ok) {
+    if (!groqRes || !groqRes.ok) {
       // Do NOT leak Groq's error body (could reference the request/key setup).
       return new Response(JSON.stringify({ error: 'upstream_error' }), {
         status: 502,

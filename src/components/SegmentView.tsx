@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { Poi, Segment } from '../types';
 import { hotelById } from '../data/tripData';
 import { mergePois, useOverrides } from '../lib/overrides';
+import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
 import HotelCard from './HotelCard';
@@ -13,6 +14,7 @@ import PoiForm from './PoiForm';
 export default function SegmentView({ segment }: { segment: Segment }) {
   const { t } = useI18n();
   const { overrides, removePoi, editPoi, addPoi, movePoi } = useOverrides();
+  const { isVisited, toggleVisited } = useVisited();
   const [editing, setEditing] = useState(false);
   // Which POI is being edited in the modal; 'new' = adding a new one.
   const [modal, setModal] = useState<Poi | 'new' | null>(null);
@@ -57,9 +59,11 @@ export default function SegmentView({ segment }: { segment: Segment }) {
         <PoiCard
           key={p.id}
           poi={p}
+          visited={isVisited(p.id)}
+          onToggleVisited={() => toggleVisited(p.id)}
           editing={editing}
           onEdit={() => setModal(p)}
-          onRemove={() => removePoi(p.id)}
+          onRemove={() => confirm(`${t('removeConfirm')} — ${p.name}`) && removePoi(p.id)}
           onMoveUp={() => movePoi(segment, overrides, p.id, -1)}
           onMoveDown={() => movePoi(segment, overrides, p.id, 1)}
         />
