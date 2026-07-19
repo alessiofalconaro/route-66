@@ -84,5 +84,6 @@ export const PHOTOS: Record<string, string> = {
   "stlouis": "img/poi/stlouis.jpg",
   "tulsa": "img/poi/tulsa.jpg",
   "amarillo": "img/poi/amarillo.jpg",
-  "springdale": "img/poi/springdale.jpg"
+  "springdale": "img/poi/springdale.jpg",
+  "los-angeles": "img/poi/los-angeles.jpg"
 };
