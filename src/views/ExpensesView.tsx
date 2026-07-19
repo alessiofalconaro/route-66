@@ -19,7 +19,7 @@ import {
 } from '../lib/expenseSync';
 import { useI18n, type TKey } from '../i18n';
 
-const CATEGORIES: { value: Expense['category']; labelKey: TKey }[] = [
+const DEFAULT_CATEGORIES: { value: string; labelKey: TKey }[] = [
   { value: 'fuel', labelKey: 'catFuel' },
   { value: 'hotel', labelKey: 'catHotel' },
   { value: 'food', labelKey: 'catFood' },
@@ -27,6 +27,33 @@ const CATEGORIES: { value: Expense['category']; labelKey: TKey }[] = [
   { value: 'souvenirs', labelKey: 'catSouvenirs' },
   { value: 'other', labelKey: 'catOther' },
 ];
+
+/**
+ * Category list = the 6 translated defaults + the user's custom ones
+ * (persisted in localStorage) + any category found in `inUse` (so custom
+ * categories arriving via sync from another phone show up here too).
+ */
+function useCategoryOptions(inUse: string[]) {
+  const { t } = useI18n();
+  const [custom, setCustom] = usePersistentState<string[]>('customCategories', []);
+
+  const labelOf = (value: string) => {
+    const def = DEFAULT_CATEGORIES.find((c) => c.value === value);
+    return def ? t(def.labelKey) : value; // custom categories ARE their label
+  };
+
+  const customAll = [
+    ...new Set([...custom, ...inUse.filter((v) => !DEFAULT_CATEGORIES.some((c) => c.value === v))]),
+  ];
+  const options = [
+    ...DEFAULT_CATEGORIES.map((c) => ({ value: c.value, label: t(c.labelKey) })),
+    ...customAll.map((v) => ({ value: v, label: v })),
+  ];
+  const addCustom = (label: string) =>
+    setCustom((list) => (list.includes(label) ? list : [...list, label]));
+
+  return { options, labelOf, addCustom };
+}
 
 // A personal expense has no payer — it's implicitly "me, on this phone".
 interface PersonalExpense {
@@ -180,11 +207,15 @@ function SharedSection() {
   const net = netBalances(expenses, travelers);
   const pays = settlements(net);
 
+  const { options, labelOf, addCustom } = useCategoryOptions(expenses.map((e) => e.category));
+
   const total = expenses.reduce((s, e) => s + e.amountUsd, 0);
-  const byCategory = CATEGORIES.map((c) => ({
-    ...c,
-    sum: expenses.filter((e) => e.category === c.value).reduce((s, e) => s + e.amountUsd, 0),
-  }))
+  const byCategory = [...new Set(expenses.map((e) => e.category))]
+    .map((value) => ({
+      value,
+      label: labelOf(value),
+      sum: expenses.filter((e) => e.category === value).reduce((s, e) => s + e.amountUsd, 0),
+    }))
     .filter((c) => c.sum > 0)
     .sort((a, b) => b.sum - a.sum);
   const fuelSum = byCategory.find((c) => c.value === 'fuel')?.sum ?? 0;
@@ -227,7 +258,7 @@ function SharedSection() {
           {byCategory.map((c) => (
             <div key={c.value}>
               <div className="flex justify-between text-sm">
-                <span>{t(c.labelKey)}</span>
+                <span>{c.label}</span>
                 <span className="font-medium">{fmtUsd(c.sum)}</span>
               </div>
               <div className="mt-0.5 h-1.5 rounded-full bg-stone-200 dark:bg-stone-700">
@@ -290,7 +321,7 @@ function SharedSection() {
             ))}
           </select>
         </label>
-        <ExpenseFields form={form} setForm={setForm} />
+        <ExpenseFields form={form} setForm={setForm} options={options} onAddCategory={addCustom} />
         <button type="submit" className="w-full bg-red-700 text-white rounded-lg py-2 text-sm font-medium">
           ＋ {t('expenseAdd')}
         </button>
@@ -307,7 +338,7 @@ function SharedSection() {
               {nameOf(e.payerId)} · {fmtUsd(e.amountUsd)}
             </p>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              {e.date} · {t(CATEGORIES.find((c) => c.value === e.category)!.labelKey)}
+              {e.date} · {labelOf(e.category)}
               {e.note ? ` · ${e.note}` : ''}
             </p>
           </div>
@@ -369,15 +400,17 @@ function PersonalSection() {
 
   const remove = (id: string) => setPersonal((list) => list.filter((e) => e.id !== id));
 
-  const catLabel = (c: Expense['category']) =>
-    t(CATEGORIES.find((x) => x.value === c)!.labelKey);
+  const { options, labelOf, addCustom } = useCategoryOptions([
+    ...shared.map((e) => e.category),
+    ...personal.map((p) => p.category),
+  ]);
 
   // Derived rows: your 1/3 share of every shared expense on this device.
   const autoRows = shared.map((e) => ({
     id: `auto-${e.id}`,
     amountUsd: e.amountUsd / travelers.length,
     category: e.category,
-    note: `${t('expAutoShare')}: ${e.note || catLabel(e.category)} (${nameOf(e.payerId)})`,
+    note: `${t('expAutoShare')}: ${e.note || labelOf(e.category)} (${nameOf(e.payerId)})`,
     date: e.date,
     auto: true as const,
   }));
@@ -401,7 +434,7 @@ function PersonalSection() {
       {/* Add form (no payer — it's always you) */}
       <form onSubmit={add} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
         <h3 className="font-semibold text-sm">{t('expenseAdd')}</h3>
-        <ExpenseFields form={form} setForm={setForm} />
+        <ExpenseFields form={form} setForm={setForm} options={options} onAddCategory={addCustom} />
         <button type="submit" className="w-full bg-red-700 text-white rounded-lg py-2 text-sm font-medium">
           ＋ {t('expenseAdd')}
         </button>
@@ -418,7 +451,7 @@ function PersonalSection() {
               {fmtUsd(r.amountUsd)}
             </p>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              {r.date} · {catLabel(r.category)}
+              {r.date} · {labelOf(r.category)}
               {r.note ? ` · ${r.note}` : ''}
             </p>
           </div>
@@ -439,14 +472,31 @@ function PersonalSection() {
 }
 
 // Shared form fields (amount / category / note / date) used by both ledgers.
-function ExpenseFields<T extends { amount: string; category: Expense['category']; note: string; date: string }>({
+function ExpenseFields<T extends { amount: string; category: string; note: string; date: string }>({
   form,
   setForm,
+  options,
+  onAddCategory,
 }: {
   form: T;
   setForm: React.Dispatch<React.SetStateAction<T>>;
+  options: { value: string; label: string }[];
+  onAddCategory: (label: string) => void;
 }) {
   const { t } = useI18n();
+
+  const onCategoryChange = (value: string) => {
+    if (value === '__new__') {
+      // prompt() = the browser's tiny built-in input dialog
+      const name = window.prompt(t('addCategoryPrompt'))?.trim();
+      if (name) {
+        onAddCategory(name);
+        setForm((f) => ({ ...f, category: name }));
+      }
+      return; // cancelled → keep the previous selection
+    }
+    setForm((f) => ({ ...f, category: value }));
+  };
   return (
     <>
       <label className="block text-sm">
@@ -467,11 +517,12 @@ function ExpenseFields<T extends { amount: string; category: Expense['category']
         <select
           className={input}
           value={form.category}
-          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as Expense['category'] }))}
+          onChange={(e) => onCategoryChange(e.target.value)}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>{t(c.labelKey)}</option>
+          {options.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
           ))}
+          <option value="__new__">➕ {t('addCategory')}…</option>
         </select>
       </label>
       <label className="block text-sm">

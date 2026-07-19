@@ -71,7 +71,10 @@ export interface Expense {
   id: string;
   payerId: string; // Traveler.id — resolved to a display name at render time
   amountUsd: number;
-  category: 'fuel' | 'hotel' | 'food' | 'tickets' | 'souvenirs' | 'other';
+  // One of the default ids ('fuel', 'hotel', ...) or a custom label the user
+  // created ("Lavanderia") — custom ones are stored as their own text so any
+  // phone receiving them via sync can display them without extra data.
+  category: string;
   note: string;
   date: string; // ISO "2026-08-05"
 }

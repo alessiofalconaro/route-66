@@ -74,8 +74,6 @@ function corsHeaders(origin: string): Record<string, string> {
 // Multi-writer: all three phones may add and delete. PUT does a server-side
 // MERGE (union by expense id + deletion tombstones), so concurrent pushes
 // never overwrite each other and a deletion propagates to every phone.
-const EXP_CATEGORIES = ['fuel', 'hotel', 'food', 'tickets', 'souvenirs', 'other'];
-
 interface ExpenseRow {
   id: string;
   payerId: string;
@@ -105,7 +103,8 @@ function validSnapshot(body: unknown): body is Snapshot {
       typeof x.id === 'string' && x.id.length <= 64 &&
       typeof x.payerId === 'string' && x.payerId.length <= 32 &&
       typeof x.amountUsd === 'number' && x.amountUsd > 0 && x.amountUsd < 1000000 &&
-      typeof x.category === 'string' && EXP_CATEGORIES.includes(x.category) &&
+      // default ids or user-created labels — any short string is fine
+      typeof x.category === 'string' && x.category.length >= 1 && x.category.length <= 40 &&
       typeof x.note === 'string' && x.note.length <= 300 &&
       typeof x.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date)
     );
