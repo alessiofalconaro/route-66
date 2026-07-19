@@ -79,5 +79,10 @@ export const PHOTOS: Record<string, string> = {
   "las-vegas": "img/poi/leg9-caesars.jpg",
   "grand-canyon": "img/poi/grand-canyon.jpg",
   "three-rivers": "img/poi/three-rivers.jpg",
-  "leg3-tower-theatre": "img/poi/leg3-tower-theatre.jpg"
+  "leg3-tower-theatre": "img/poi/leg3-tower-theatre.jpg",
+  "chicago": "img/poi/chicago.jpg",
+  "stlouis": "img/poi/stlouis.jpg",
+  "tulsa": "img/poi/tulsa.jpg",
+  "amarillo": "img/poi/amarillo.jpg",
+  "springdale": "img/poi/springdale.jpg"
 };
