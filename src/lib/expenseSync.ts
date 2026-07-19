@@ -1,7 +1,8 @@
 // Shared-expenses sync through the same Cloudflare Worker as the chat.
-// Model: Falco's phone is the only WRITER (it pushes after every change);
-// all phones PULL on opening the Expenses screen. Offline → you simply keep
-// the last copy you downloaded. The trip PIN gates everything server-side.
+// Multi-writer: ALL three phones can add and delete; the server MERGES every
+// push (union by expense id + deletion tombstones), so nobody overwrites
+// anybody and deletions propagate everywhere. Offline → you keep the last
+// copy you downloaded. The trip PIN gates everything server-side.
 import type { Expense } from '../types';
 
 const ENDPOINT: string | undefined = import.meta.env.VITE_CHAT_ENDPOINT;
@@ -17,7 +18,20 @@ export function syncConfigured(pin: string): boolean {
 
 export interface SharedSnapshot {
   expenses: Expense[];
-  updatedAt: number; // ms epoch of the writer's last change
+  deletedIds: string[]; // tombstones: ids deleted on some phone
+  updatedAt: number; // ms epoch of the last change
+}
+
+/** Client-side union of two snapshots (same rule the server applies). */
+export function mergeSnapshots(a: SharedSnapshot, b: SharedSnapshot): SharedSnapshot {
+  const deleted = new Set([...a.deletedIds, ...b.deletedIds]);
+  const byId = new Map(a.expenses.map((e) => [e.id, e]));
+  for (const e of b.expenses) byId.set(e.id, e);
+  return {
+    expenses: [...byId.values()].filter((e) => !deleted.has(e.id)),
+    deletedIds: [...deleted],
+    updatedAt: Math.max(a.updatedAt, b.updatedAt),
+  };
 }
 
 async function request(pin: string, init: RequestInit): Promise<Response> {
@@ -41,12 +55,14 @@ export async function pullShared(pin: string): Promise<SharedSnapshot> {
   return (await res.json()) as SharedSnapshot;
 }
 
-/** Uploads the snapshot (writer phone only). Throws on failure. */
-export async function pushShared(snapshot: SharedSnapshot, pin: string): Promise<void> {
+/** Uploads the snapshot; the server merges and returns the combined result,
+ *  which the caller should adopt as its new local state. Throws on failure. */
+export async function pushShared(snapshot: SharedSnapshot, pin: string): Promise<SharedSnapshot> {
   const res = await request(pin, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(snapshot),
   });
   if (!res.ok) throw new Error(`push ${res.status}`);
+  return (await res.json()) as SharedSnapshot;
 }

@@ -71,13 +71,33 @@ function corsHeaders(origin: string): Record<string, string> {
 }
 
 // --- shared-expenses sync (GET/PUT /expenses, gated by the trip PIN) --------
+// Multi-writer: all three phones may add and delete. PUT does a server-side
+// MERGE (union by expense id + deletion tombstones), so concurrent pushes
+// never overwrite each other and a deletion propagates to every phone.
 const EXP_CATEGORIES = ['fuel', 'hotel', 'food', 'tickets', 'souvenirs', 'other'];
 
-function validExpenses(body: unknown): body is { expenses: unknown[]; updatedAt: number } {
+interface ExpenseRow {
+  id: string;
+  payerId: string;
+  amountUsd: number;
+  category: string;
+  note: string;
+  date: string;
+}
+
+interface Snapshot {
+  expenses: ExpenseRow[];
+  deletedIds: string[];
+  updatedAt: number;
+}
+
+function validSnapshot(body: unknown): body is Snapshot {
   if (typeof body !== 'object' || body === null) return false;
   const b = body as Record<string, unknown>;
   if (typeof b.updatedAt !== 'number') return false;
-  if (!Array.isArray(b.expenses) || b.expenses.length > 1000) return false;
+  if (!Array.isArray(b.deletedIds) || b.deletedIds.length > 4000) return false;
+  if (!b.deletedIds.every((d) => typeof d === 'string' && d.length <= 64)) return false;
+  if (!Array.isArray(b.expenses) || b.expenses.length > 2000) return false;
   return b.expenses.every((e) => {
     if (typeof e !== 'object' || e === null) return false;
     const x = e as Record<string, unknown>;
@@ -90,6 +110,18 @@ function validExpenses(body: unknown): body is { expenses: unknown[]; updatedAt:
       typeof x.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x.date)
     );
   });
+}
+
+/** Reads the stored snapshot, tolerating the older shape without deletedIds. */
+async function readSnapshot(env: Env): Promise<Snapshot> {
+  const raw = await env.EXPENSES.get('shared-expenses');
+  if (!raw) return { expenses: [], deletedIds: [], updatedAt: 0 };
+  const parsed = JSON.parse(raw) as Partial<Snapshot>;
+  return {
+    expenses: parsed.expenses ?? [],
+    deletedIds: parsed.deletedIds ?? [],
+    updatedAt: parsed.updatedAt ?? 0,
+  };
 }
 
 async function handleExpenses(
@@ -110,8 +142,7 @@ async function handleExpenses(
   }
 
   if (request.method === 'GET') {
-    const stored = await env.EXPENSES.get('shared-expenses');
-    return json(200, stored ? JSON.parse(stored) : { expenses: [], updatedAt: 0 });
+    return json(200, await readSnapshot(env));
   }
 
   if (request.method === 'PUT') {
@@ -121,12 +152,21 @@ async function handleExpenses(
     } catch {
       return json(400, { error: 'bad_json' });
     }
-    if (!validExpenses(body)) return json(400, { error: 'bad_request' });
-    await env.EXPENSES.put(
-      'shared-expenses',
-      JSON.stringify({ expenses: body.expenses, updatedAt: body.updatedAt }),
-    );
-    return json(200, { ok: true });
+    if (!validSnapshot(body)) return json(400, { error: 'bad_request' });
+
+    // MERGE with what's stored instead of overwriting it.
+    const stored = await readSnapshot(env);
+    const deleted = new Set([...stored.deletedIds, ...body.deletedIds]);
+    const byId = new Map(stored.expenses.map((e) => [e.id, e]));
+    for (const e of body.expenses) byId.set(e.id, e); // incoming wins per id
+    const merged: Snapshot = {
+      expenses: [...byId.values()].filter((e) => !deleted.has(e.id)),
+      deletedIds: [...deleted].slice(-4000), // keep the tombstone list bounded
+      updatedAt: Date.now(),
+    };
+    await env.EXPENSES.put('shared-expenses', JSON.stringify(merged));
+    // Return the merged result so the client adopts it immediately.
+    return json(200, merged);
   }
 
   return json(405, { error: 'method_not_allowed' });

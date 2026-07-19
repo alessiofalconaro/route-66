@@ -105,7 +105,8 @@ const en = {
   chatNotConfigured: 'Online assistant not configured — offline suggestions always work.',
   // Expenses
   expensesTitle: 'Expenses',
-  expensesSingleWriter: 'Single writer: only Falco records expenses, on this device.',
+  expensesSingleWriter:
+    'Shared ledger — everyone can add and delete from their own phone; changes sync to all three (needs signal + trip PIN).',
   expenseAdd: 'Add expense',
   expensePayer: 'Who paid?',
   expenseAmount: 'Amount (USD)',
@@ -270,7 +271,8 @@ const es: typeof en = {
   chatOfflineShown: 'Sin conexión — se muestran las sugerencias offline.',
   chatNotConfigured: 'Asistente online no configurado — las sugerencias offline siempre funcionan.',
   expensesTitle: 'Gastos',
-  expensesSingleWriter: 'Un solo registrador: solo Falco anota los gastos, en este teléfono.',
+  expensesSingleWriter:
+    'Gastos compartidos — todos pueden añadir y borrar desde su teléfono; los cambios se sincronizan en los tres (necesita señal + PIN del viaje).',
   expenseAdd: 'Añadir gasto',
   expensePayer: '¿Quién pagó?',
   expenseAmount: 'Importe (USD)',

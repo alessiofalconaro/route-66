@@ -10,7 +10,13 @@ import { FUEL_TOTAL_USD } from '../data/tripData';
 import { usePersistentState } from '../lib/storage';
 import { useTravelers } from '../lib/travelers';
 import { fmtUsd, netBalances, settlements } from '../lib/expenses';
-import { pullShared, pushShared, syncConfigured } from '../lib/expenseSync';
+import {
+  mergeSnapshots,
+  pullShared,
+  pushShared,
+  syncConfigured,
+  type SharedSnapshot,
+} from '../lib/expenseSync';
 import { useI18n, type TKey } from '../i18n';
 
 const CATEGORIES: { value: Expense['category']; labelKey: TKey }[] = [
@@ -72,32 +78,36 @@ export default function ExpensesView() {
 // ---------------------------------------------------------------------------
 function SharedSection() {
   const { t } = useI18n();
-  const { travelers, nameOf, whoAmI } = useTravelers();
+  const { travelers, nameOf } = useTravelers();
+  // Multi-writer: every phone can add/delete; the server merges every push.
   const [expenses, setExpenses] = usePersistentState<Expense[]>('expenses', []);
-  // Timestamp of the last local change — decides who is newer during sync.
+  // Tombstones: ids deleted somewhere — kept so a deletion reaches every phone.
+  const [deletedIds, setDeletedIds] = usePersistentState<string[]>('expensesDeletedIds', []);
   const [updatedAt, setUpdatedAt] = usePersistentState<number>('expensesUpdatedAt', 0);
   const [pin] = usePersistentState<string>('tripPin', '');
   const [syncState, setSyncState] = useState<'ok' | 'fail' | null>(null);
 
-  // Only Falco's phone (traveler t1) writes to the server — everyone else
-  // only pulls, so a stray edit on another phone can never clobber the ledger.
-  const isWriter = whoAmI === 't1';
+  const adopt = (s: SharedSnapshot) => {
+    setExpenses(s.expenses);
+    setDeletedIds(s.deletedIds);
+    setUpdatedAt(s.updatedAt);
+  };
 
-  // On opening the screen: pull; take the remote copy if it's newer. If this
-  // is the writer and LOCAL is newer (e.g. expenses added offline), push.
+  // On opening the screen: pull, merge with local, and push back if this
+  // phone had offline changes the server hasn't seen yet.
   useEffect(() => {
     if (!syncConfigured(pin)) return;
     let cancelled = false;
     (async () => {
       try {
+        const local: SharedSnapshot = { expenses, deletedIds, updatedAt };
         const remote = await pullShared(pin);
         if (cancelled) return;
-        if (remote.updatedAt > updatedAt) {
-          setExpenses(remote.expenses);
-          setUpdatedAt(remote.updatedAt);
-        } else if (isWriter && updatedAt > remote.updatedAt) {
-          await pushShared({ expenses, updatedAt }, pin);
-        }
+        const merged = mergeSnapshots(remote, local);
+        const localHasNews =
+          expenses.some((e) => !remote.expenses.some((r) => r.id === e.id)) ||
+          deletedIds.some((d) => !remote.deletedIds.includes(d));
+        adopt(localHasNews ? await pushShared(merged, pin) : merged);
         if (!cancelled) setSyncState('ok');
       } catch {
         if (!cancelled) setSyncState('fail');
@@ -109,14 +119,21 @@ function SharedSection() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per mount
   }, []);
 
-  /** Saves locally and (writer only) pushes to the Worker in the background. */
-  const saveAndSync = (next: Expense[]) => {
-    const ts = Date.now();
-    setExpenses(next);
-    setUpdatedAt(ts);
-    if (isWriter && syncConfigured(pin)) {
-      pushShared({ expenses: next, updatedAt: ts }, pin)
-        .then(() => setSyncState('ok'))
+  /** Saves locally and pushes; the server returns the merged ledger and we
+   *  adopt it, so anything the others added meanwhile appears right away. */
+  const saveAndSync = (nextExpenses: Expense[], nextDeleted: string[]) => {
+    const snapshot: SharedSnapshot = {
+      expenses: nextExpenses,
+      deletedIds: nextDeleted,
+      updatedAt: Date.now(),
+    };
+    adopt(snapshot);
+    if (syncConfigured(pin)) {
+      pushShared(snapshot, pin)
+        .then((merged) => {
+          adopt(merged);
+          setSyncState('ok');
+        })
         .catch(() => setSyncState('fail'));
     }
   };
@@ -141,11 +158,15 @@ function SharedSection() {
       note: form.note.trim(),
       date: form.date,
     };
-    saveAndSync([expense, ...expenses]);
+    saveAndSync([expense, ...expenses], deletedIds);
     setForm((f) => ({ ...f, amount: '', note: '' }));
   };
 
-  const remove = (id: string) => saveAndSync(expenses.filter((e) => e.id !== id));
+  const remove = (id: string) =>
+    saveAndSync(
+      expenses.filter((e) => e.id !== id),
+      [...deletedIds, id],
+    );
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(expenses, null, 2)], { type: 'application/json' });
@@ -275,8 +296,8 @@ function SharedSection() {
         </button>
       </form>
 
-      {/* List */}
-      {expenses.map((e) => (
+      {/* List (newest first — merged lists arrive in arbitrary order) */}
+      {[...expenses].sort((a, b) => (a.date < b.date ? 1 : -1)).map((e) => (
         <div
           key={e.id}
           className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-center gap-2 text-sm"
