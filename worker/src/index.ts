@@ -30,7 +30,9 @@ interface ChatMessage {
 // Map is not a perfect global counter — but it's free and good enough to stop
 // a stray script from draining the Groq free quota. Worst case: throttling.
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 10;
+// Generous: the three phones often share one public IP (hotel Wi-Fi /
+// hotspot) and each app-open fires a couple of sync pulls.
+const MAX_PER_WINDOW = 40;
 const hits = new Map<string, { count: number; windowStart: number }>();
 
 function rateLimited(ip: string): boolean {

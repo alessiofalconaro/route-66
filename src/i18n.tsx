@@ -166,6 +166,9 @@ const en = {
   pinChecking: 'Checking PIN…',
   pinOk: 'PIN correct — sync active ✓',
   pinBad: 'Wrong PIN',
+  pinNetErr: 'Could not verify — check your connection and try again',
+  confirmPin: 'Confirm PIN',
+  changePin: 'Change PIN',
   // Visited sorting
   sortToSee: 'To-see first',
   // More screen
@@ -359,6 +362,9 @@ const es: typeof en = {
   pinChecking: 'Comprobando PIN…',
   pinOk: 'PIN correcto — sync activo ✓',
   pinBad: 'PIN incorrecto',
+  pinNetErr: 'No se pudo verificar — comprueba la conexión y reinténtalo',
+  confirmPin: 'Confirmar PIN',
+  changePin: 'Cambiar PIN',
   sortToSee: 'Por ver primero',
   moreTitle: 'Más',
   albumButton: 'Abrir nuestro álbum del viaje',

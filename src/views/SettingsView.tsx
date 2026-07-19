@@ -1,6 +1,6 @@
 // Settings: language, theme, travelers, album URL, trip PIN (with live
 // verification), custom-category manager, itinerary reset/export/import.
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useI18n, type Lang } from '../i18n';
 import { useTheme, type Theme } from '../lib/theme';
 import { useTravelers } from '../lib/travelers';
@@ -16,25 +16,30 @@ export default function SettingsView() {
   const { travelers, rename, whoAmI, setWhoAmI } = useTravelers();
   const [albumUrl, setAlbumUrl] = usePersistentState<string>('albumUrl', '');
   const [tripPin, setTripPin] = usePersistentState<string>('tripPin', '');
-  // Live PIN verification: a debounced GET to the sync endpoint tells the
-  // user right away whether the PIN they typed is the right one.
-  const [pinStatus, setPinStatus] = useState<'idle' | 'checking' | 'ok' | 'bad'>('idle');
-  useEffect(() => {
-    if (!tripPin.trim()) {
-      setPinStatus('idle');
-      return;
-    }
+  // PIN verification: explicit — the check runs only when the user taps
+  // "Confirm PIN". Once verified, the field locks; "Change PIN" unlocks it.
+  const [pinVerified, setPinVerified] = usePersistentState<boolean>('tripPinVerified', false);
+  const [pinStatus, setPinStatus] = useState<'idle' | 'checking' | 'ok' | 'bad' | 'neterr'>(
+    'idle',
+  );
+
+  const confirmPin = async () => {
+    if (!tripPin.trim()) return;
     setPinStatus('checking');
-    const timer = setTimeout(async () => {
-      try {
-        await pullShared(tripPin);
-        setPinStatus('ok');
-      } catch (err) {
-        setPinStatus(err instanceof Error && err.message.includes('401') ? 'bad' : 'idle');
-      }
-    }, 700);
-    return () => clearTimeout(timer);
-  }, [tripPin]);
+    try {
+      await pullShared(tripPin);
+      setPinVerified(true); // correct → field locks
+      setPinStatus('ok');
+    } catch (err) {
+      // 401 = wrong PIN (field stays editable); anything else = network issue
+      setPinStatus(err instanceof Error && err.message.includes('401') ? 'bad' : 'neterr');
+    }
+  };
+
+  const changePin = () => {
+    setPinVerified(false);
+    setPinStatus('idle');
+  };
   const { overrides, setOverrides, resetAll } = useOverrides();
   // useRef = a stable reference to a DOM element (the hidden file input).
   const fileInput = useRef<HTMLInputElement>(null);
@@ -151,25 +156,52 @@ export default function SettingsView() {
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('albumUrlHint')}</p>
       </div>
 
-      {/* Trip PIN — unlocks the shared-expenses sync on this phone */}
-      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-1">
+      {/* Trip PIN — unlocks the sync on this phone */}
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
         <h3 className="font-semibold text-sm">🔑 {t('tripPinLabel')}</h3>
-        <input
-          className={input}
-          type="text"
-          autoComplete="off"
-          value={tripPin}
-          onChange={(e) => setTripPin(e.target.value)}
-        />
+        <div className="flex gap-2">
+          <input
+            className={`${input} flex-1 disabled:opacity-60`}
+            type="text"
+            autoComplete="off"
+            value={tripPin}
+            disabled={pinVerified}
+            onChange={(e) => {
+              setTripPin(e.target.value);
+              setPinStatus('idle');
+            }}
+          />
+          {pinVerified ? (
+            <button
+              onClick={changePin}
+              className="shrink-0 rounded-lg bg-stone-200 dark:bg-stone-700 px-3 text-sm font-medium"
+            >
+              ✏️ {t('changePin')}
+            </button>
+          ) : (
+            <button
+              onClick={confirmPin}
+              disabled={!tripPin.trim() || pinStatus === 'checking'}
+              className="shrink-0 rounded-lg bg-green-600 text-white px-3 text-sm font-medium disabled:opacity-50"
+            >
+              {t('confirmPin')}
+            </button>
+          )}
+        </div>
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('tripPinHint')}</p>
         {pinStatus === 'checking' && (
           <p className="text-xs text-stone-500 dark:text-stone-400">⏳ {t('pinChecking')}</p>
         )}
-        {pinStatus === 'ok' && (
+        {(pinStatus === 'ok' || (pinVerified && pinStatus === 'idle')) && (
           <p className="text-xs font-medium text-green-700 dark:text-green-400">✅ {t('pinOk')}</p>
         )}
         {pinStatus === 'bad' && (
           <p className="text-xs font-medium text-red-700 dark:text-red-400">❌ {t('pinBad')}</p>
+        )}
+        {pinStatus === 'neterr' && (
+          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+            ⚠️ {t('pinNetErr')}
+          </p>
         )}
       </div>
 
