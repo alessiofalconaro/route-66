@@ -36,7 +36,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
         <button
           onClick={() => setEditing((e) => !e)}
           className={`text-sm font-medium rounded-lg px-3 py-1.5 ${
-            editing ? 'bg-red-700 text-white' : 'bg-stone-200 dark:bg-stone-700'
+            editing ? 'bg-green-600 text-white' : 'bg-stone-200 dark:bg-stone-700'
           }`}
         >
           {editing ? t('doneEditing') : `✏️ ${t('editItinerary')}`}
