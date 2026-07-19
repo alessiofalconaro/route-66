@@ -60,5 +60,21 @@ export const PHOTOS: Record<string, string> = {
   "la-marina": "img/poi/la-marina.jpg",
   "la-crypto-arena": "img/poi/la-crypto-arena.jpg",
   "la-intuit-dome": "img/poi/la-intuit-dome.jpg",
-  "springfield-mo": "img/poi/springfield-mo.jpg"
+  "springfield-mo": "img/poi/springfield-mo.jpg",
+  "la-academy-museum": "img/poi/la-academy-museum.jpg",
+  "la-venice-beach": "img/poi/la-venice-beach.jpg",
+  "leg2-red-oak": "img/poi/leg2-red-oak.jpg",
+  "leg3-cyrus-avery": "img/poi/leg3-cyrus-avery.jpg",
+  "leg4-leaning-tower": "img/poi/leg4-leaning-tower.jpg",
+  "leg4-ok66-museum": "img/poi/leg4-ok66-museum.jpg",
+  "leg7-yavapai": "img/poi/leg7-yavapai.jpg",
+  "leg9-caesars": "img/poi/leg9-caesars.jpg",
+  "zion-weeping-rock": "img/poi/zion-weeping-rock.jpg",
+  "chi-r66-sign": "img/poi/chi-r66-sign.jpg",
+  "chi-bulls-store": "img/poi/chi-bulls-store.jpg",
+  "leg1-lauterbach": "img/poi/leg1-lauterbach.jpg",
+  "leg3-tristate": "img/poi/leg3-tristate.jpg",
+  "leg11-celebration": "img/poi/leg11-celebration.jpg",
+  "albuquerque": "img/poi/albuquerque.jpg",
+  "las-vegas": "img/poi/leg9-caesars.jpg"
 };

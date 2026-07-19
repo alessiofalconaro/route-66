@@ -6,12 +6,15 @@ import { useState } from 'react';
 import { SEGMENTS } from '../data/tripData';
 import { EXTRA_IDEAS } from '../data/extraIdeas';
 import { askAssistant, chatConfigured, type ChatMessage } from '../lib/chat';
+import { useSessionState } from '../lib/storage';
 import { useI18n } from '../i18n';
 
 export default function ChatView() {
   const { t, lang } = useI18n();
-  const [segmentId, setSegmentId] = useState(SEGMENTS[0].id);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // sessionStorage: the conversation survives switching tab or briefly
+  // leaving the app; it resets only when the app is closed and reopened.
+  const [segmentId, setSegmentId] = useSessionState('chat.segment', SEGMENTS[0].id);
+  const [messages, setMessages] = useSessionState<ChatMessage[]>('chat.messages', []);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [offlineNotice, setOfflineNotice] = useState(false);

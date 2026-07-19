@@ -34,6 +34,30 @@ export function removeKey(key: string): void {
 }
 
 /**
+ * Like usePersistentState but backed by sessionStorage: the value survives
+ * tab switches, reloads and briefly leaving the app, but is cleared when the
+ * app is fully closed and reopened (a new session). Used by the chat.
+ */
+export function useSessionState<T>(key: string, fallback: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const raw = sessionStorage.getItem(PREFIX + key);
+      return raw === null ? fallback : (JSON.parse(raw) as T);
+    } catch {
+      return fallback;
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(PREFIX + key, JSON.stringify(value));
+    } catch {
+      /* storage disabled — value just lives in memory */
+    }
+  }, [key, value]);
+  return [value, setValue] as const;
+}
+
+/**
  * React hook: like useState, but the value survives app restarts.
  *
  * JS concept — "hook": a function that plugs local state into a component.

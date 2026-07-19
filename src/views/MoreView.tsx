@@ -23,7 +23,6 @@ export default function MoreView({ router }: { router: Router }) {
         </button>
         {sub === 'expenses' && <ExpensesView />}
         {sub === 'shopping' && <ShoppingView />}
-        {sub === 'checklist' && <ChecklistView />}
         {sub === 'emergency' && <EmergencyView />}
         {sub === 'settings' && <SettingsView />}
       </div>
@@ -60,9 +59,6 @@ export default function MoreView({ router }: { router: Router }) {
       <button onClick={() => router.navigate('more/shopping')} className={item}>
         🛒 {t('shoppingTitle')}
       </button>
-      <button onClick={() => router.navigate('more/checklist')} className={item}>
-        ✅ {t('checklistTitle')}
-      </button>
       <button onClick={() => router.navigate('more/emergency')} className={item}>
         🚨 {t('emergencyTitle')}
       </button>
@@ -76,34 +72,6 @@ export default function MoreView({ router }: { router: Router }) {
         <p className="mt-1">{t('weatherBody')}</p>
       </div>
     </div>
-  );
-}
-
-// --- Reusable persisted checklist (checkbox list saved in localStorage) ---
-function CheckList({ storageKey, items }: { storageKey: string; items: { id: string; label: string }[] }) {
-  const [done, setDone] = usePersistentState<string[]>(storageKey, []);
-  const toggle = (id: string) =>
-    setDone((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
-
-  return (
-    <>
-      {items.map((it) => (
-        <label
-          key={it.id}
-          className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-start gap-3 text-sm"
-        >
-          <input
-            type="checkbox"
-            checked={done.includes(it.id)}
-            onChange={() => toggle(it.id)}
-            className="mt-0.5 w-5 h-5 accent-red-700"
-          />
-          <span className={done.includes(it.id) ? 'line-through text-stone-400' : ''}>
-            {it.label}
-          </span>
-        </label>
-      ))}
-    </>
   );
 }
 
@@ -218,25 +186,6 @@ function ShoppingView() {
           ＋
         </button>
       </div>
-    </div>
-  );
-}
-
-// --- Pre-departure checklist ---
-function ChecklistView() {
-  const { t } = useI18n();
-  // ids stay the same as the first release so saved ticks are not lost
-  const items = [
-    { id: 'idp', label: t('chkIdp') },
-    { id: 'card', label: t('chkCard') },
-    { id: 'jesse', label: t('chkJesse') },
-    { id: 'parkpass', label: t('chkParkPass') },
-    { id: 'water', label: t('chkWater') },
-  ];
-  return (
-    <div className="space-y-3">
-      <h1 className="text-xl font-bold">✅ {t('checklistTitle')}</h1>
-      <CheckList storageKey="checklist" items={items} />
     </div>
   );
 }
