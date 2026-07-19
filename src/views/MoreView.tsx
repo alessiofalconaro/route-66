@@ -5,8 +5,6 @@ import { useState } from 'react';
 import { useI18n, type TKey } from '../i18n';
 import { usePersistentState } from '../lib/storage';
 import { useSharedState, type ShopItem } from '../lib/stateSync';
-import { dayForDate, todayIso } from '../data/days';
-import { CITIES, segmentById } from '../data/tripData';
 import type { Router } from '../lib/router';
 import ExpensesView from './ExpensesView';
 import SettingsView from './SettingsView';
@@ -30,7 +28,6 @@ export default function MoreView({ router }: { router: Router }) {
         {sub === 'expenses' && <ExpensesView />}
         {sub === 'shopping' && <ShoppingView />}
         {sub === 'tips' && <DrivingTipsView />}
-        {sub === 'campsnap' && <CampSnapView />}
         {sub === 'emergency' && <EmergencyView />}
         {sub === 'settings' && <SettingsView />}
       </div>
@@ -69,9 +66,6 @@ export default function MoreView({ router }: { router: Router }) {
       </button>
       <button onClick={() => router.navigate('more/tips')} className={item}>
         🚘 {t('drivingTipsTitle')}
-      </button>
-      <button onClick={() => router.navigate('more/campsnap')} className={item}>
-        📷 {t('campSnapTitle')}
       </button>
       <button onClick={() => router.navigate('more/emergency')} className={item}>
         🚨 {t('emergencyTitle')}
@@ -213,112 +207,6 @@ function ShoppingView() {
           ＋
         </button>
       </div>
-    </div>
-  );
-}
-
-// --- Camp Snap shot log (personal, local-only — see CLAUDE.md §5) ----------
-// The CS-Pro camera has no screen: this list helps caption the photos after
-// the USB transfer. Location is pre-filled from today's leg/city.
-interface ShotEntry {
-  id: string;
-  date: string;
-  location: string;
-  subject: string;
-  note: string;
-}
-
-function CampSnapView() {
-  const { t } = useI18n();
-  const [entries, setEntries] = usePersistentState<ShotEntry[]>('campSnapLog', []);
-
-  // Suggest today's place: the current trip day, if we're on the trip.
-  const day = dayForDate(todayIso());
-  const suggested = day
-    ? day.mode === 'leg'
-      ? (segmentById(day.id)?.label ?? '')
-      : (CITIES.find((c) => c.id === day.id)?.label ?? '')
-    : '';
-
-  const [form, setForm] = useState({ location: suggested, subject: '', note: '' });
-
-  const add = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.subject.trim()) return;
-    setEntries((list) => [
-      {
-        id: `cs-${crypto.randomUUID()}`,
-        date: todayIso(),
-        location: form.location.trim(),
-        subject: form.subject.trim(),
-        note: form.note.trim(),
-      },
-      ...list,
-    ]);
-    setForm((f) => ({ ...f, subject: '', note: '' }));
-  };
-
-  const input =
-    'w-full rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-3 py-2 text-sm';
-
-  return (
-    <div className="space-y-3">
-      <h1 className="text-xl font-bold">📷 {t('campSnapTitle')}</h1>
-      <p className="text-xs text-stone-500 dark:text-stone-400">{t('campSnapHint')}</p>
-
-      <form onSubmit={add} className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
-        <label className="block text-sm">
-          {t('csLocation')}
-          <input
-            className={input}
-            value={form.location}
-            onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-          />
-        </label>
-        <label className="block text-sm">
-          {t('csSubject')}
-          <input
-            className={input}
-            value={form.subject}
-            onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
-            required
-          />
-        </label>
-        <label className="block text-sm">
-          {t('stopNote')}
-          <input
-            className={input}
-            value={form.note}
-            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-          />
-        </label>
-        <button type="submit" className="w-full bg-red-700 text-white rounded-lg py-2 text-sm font-medium">
-          ＋ {t('addItem')}
-        </button>
-      </form>
-
-      {entries.map((en) => (
-        <div
-          key={en.id}
-          className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 flex items-center gap-2 text-sm"
-        >
-          <div className="flex-1 min-w-0">
-            <p className="font-medium">{en.subject}</p>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {en.date}
-              {en.location ? ` · ${en.location}` : ''}
-              {en.note ? ` · ${en.note}` : ''}
-            </p>
-          </div>
-          <button
-            onClick={() => setEntries((list) => list.filter((x) => x.id !== en.id))}
-            aria-label={t('deleteExpense')}
-            className="text-red-700 dark:text-red-400 px-2"
-          >
-            🗑️
-          </button>
-        </div>
-      ))}
     </div>
   );
 }

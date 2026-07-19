@@ -213,11 +213,6 @@ const en = {
   restoreConfirm: 'Replace ALL app data on this phone with this backup?',
   shareSummary: 'Share summary',
   summaryCopied: 'Summary copied to clipboard!',
-  campSnapTitle: 'Camp Snap log',
-  campSnapHint:
-    'Personal log for the screen-free camera: jot down what you shot, so you can caption the photos after the USB transfer. Only on this phone.',
-  csLocation: 'Location',
-  csSubject: 'Subject',
   resetItinerary: 'Reset itinerary to default',
   resetConfirm: 'Discard ALL your itinerary edits and restore the original plan?',
   exportItinerary: 'Export itinerary (JSON)',
@@ -419,11 +414,6 @@ const es: typeof en = {
   restoreConfirm: '¿Sustituir TODOS los datos de la app en este teléfono por esta copia?',
   shareSummary: 'Compartir resumen',
   summaryCopied: '¡Resumen copiado al portapapeles!',
-  campSnapTitle: 'Registro Camp Snap',
-  campSnapHint:
-    'Registro personal para la cámara sin pantalla: apunta qué fotografiaste para poner títulos tras pasar las fotos por USB. Solo en este teléfono.',
-  csLocation: 'Lugar',
-  csSubject: 'Sujeto',
   resetItinerary: 'Restablecer itinerario original',
   resetConfirm: '¿Descartar TODOS tus cambios y restaurar el plan original?',
   exportItinerary: 'Exportar itinerario (JSON)',
