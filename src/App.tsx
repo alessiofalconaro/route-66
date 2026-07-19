@@ -49,11 +49,19 @@ export default function App() {
   // Pull the shared itinerary once at startup (and whenever the app comes
   // back to the foreground) so edits made by the others appear. Bumping
   // syncGen remounts the views (key on <main>) so they re-read storage.
+  // A short toast tells the user something new arrived from the group.
   const [syncGen, setSyncGen] = useState(0);
+  const [toast, setToast] = useState(false);
   useEffect(() => {
+    let toastTimer: ReturnType<typeof setTimeout> | undefined;
     const sync = async () => {
       const [a, b] = await Promise.all([pullItinerary(), pullState()]);
-      if (a || b) setSyncGen((n) => n + 1);
+      if (a || b) {
+        setSyncGen((n) => n + 1);
+        setToast(true);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => setToast(false), 3500);
+      }
     };
     void sync();
     const onVisible = () => {
@@ -178,6 +186,18 @@ export default function App() {
         {tab === 'chat' && <ChatView />}
         {tab === 'more' && <MoreView router={router} />}
       </main>
+
+      {/* "News from the group" toast (after a sync pull that changed data) */}
+      {toast && (
+        <div
+          role="status"
+          className="fixed top-3 inset-x-0 z-50 flex justify-center pointer-events-none"
+        >
+          <span className="bg-stone-900/90 text-white dark:bg-stone-100/90 dark:text-stone-900 text-sm font-medium rounded-full px-4 py-2 shadow-lg">
+            {t('syncNews')}
+          </span>
+        </div>
+      )}
 
       {/* Liquid-glass bottom dock (fixed, full width, safe-area inside) */}
       <nav className="dock" aria-label="Main">

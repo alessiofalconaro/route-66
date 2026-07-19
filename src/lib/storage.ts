@@ -17,11 +17,23 @@ export function loadJson<T>(key: string, fallback: T): T {
   }
 }
 
+// Storage-full is worth telling the user about ONCE per session — a silent
+// failure would quietly lose their edits (audit finding).
+let warnedQuota = false;
+
 export function saveJson<T>(key: string, value: T): void {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
   } catch {
-    // Storage full/disabled: silently ignore (app still works in-memory).
+    if (!warnedQuota) {
+      warnedQuota = true;
+      const es = localStorage.getItem(PREFIX + 'lang') === '"es"';
+      alert(
+        es
+          ? 'Memoria llena: el último cambio NO se guardó. Exporta una copia y quita alguna foto de las paradas.'
+          : 'Storage is full: the last change was NOT saved. Export a backup and remove some stop photos.',
+      );
+    }
   }
 }
 

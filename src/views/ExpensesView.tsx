@@ -220,6 +220,33 @@ function SharedSection() {
 
   const { options, labelOf, addCustom } = useCategoryOptions(expenses.map((e) => e.category));
 
+  /** Plain-text balance summary → native share sheet (WhatsApp & co.),
+   *  clipboard as fallback on browsers without navigator.share. */
+  const shareSummary = async () => {
+    const lines = [
+      `🛣️ Route 66 — ${t('expensesTitle')} (${new Date().toLocaleDateString()})`,
+      `${t('expTotal')}: ${fmtUsd(expenses.reduce((s, e) => s + e.amountUsd, 0))}`,
+      '',
+      t('balances') + ':',
+      ...travelers.map((tr) => `  ${tr.name}: ${net[tr.id] >= 0 ? '+' : ''}${fmtUsd(net[tr.id])}`),
+      '',
+      ...(pays.length === 0
+        ? [t('settledUp')]
+        : pays.map((p) => `${nameOf(p.fromId)} ${t('owes')} ${nameOf(p.toId)} ${fmtUsd(p.amountUsd)}`)),
+    ];
+    const text = lines.join('\n');
+    try {
+      if (navigator.share) {
+        await navigator.share({ text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        alert(t('summaryCopied'));
+      }
+    } catch {
+      /* user closed the share sheet — nothing to do */
+    }
+  };
+
   const total = expenses.reduce((s, e) => s + e.amountUsd, 0);
   const byCategory = [...new Set(expenses.map((e) => e.category))]
     .map((value) => ({
@@ -364,12 +391,20 @@ function SharedSection() {
       ))}
 
       {expenses.length > 0 && (
-        <button
-          onClick={exportJson}
-          className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium"
-        >
-          ⬇️ {t('exportExpenses')}
-        </button>
+        <>
+          <button
+            onClick={shareSummary}
+            className="w-full rounded-lg bg-red-700 text-white py-2 text-sm font-medium"
+          >
+            📤 {t('shareSummary')}
+          </button>
+          <button
+            onClick={exportJson}
+            className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium"
+          >
+            ⬇️ {t('exportExpenses')}
+          </button>
+        </>
       )}
     </>
   );

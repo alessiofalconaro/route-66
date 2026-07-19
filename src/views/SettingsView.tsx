@@ -45,6 +45,37 @@ export default function SettingsView() {
   const { overrides, setOverrides, resetAll } = useOverrides();
   // useRef = a stable reference to a DOM element (the hidden file input).
   const fileInput = useRef<HTMLInputElement>(null);
+  const backupInput = useRef<HTMLInputElement>(null);
+
+  // ---- FULL backup: every r66.* key (expenses, itinerary, settings...) ----
+  const exportBackup = () => {
+    const data: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)!;
+      if (key.startsWith('r66.')) data[key] = localStorage.getItem(key)!;
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `route66-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const restoreBackup = async (file: File) => {
+    try {
+      const data = JSON.parse(await file.text()) as Record<string, string>;
+      const keys = Object.keys(data);
+      if (keys.length === 0 || !keys.every((k) => k.startsWith('r66.'))) {
+        throw new Error('bad backup');
+      }
+      if (!confirm(t('restoreConfirm'))) return;
+      for (const [k, v] of Object.entries(data)) localStorage.setItem(k, v);
+      window.location.reload(); // restart so every view re-reads the data
+    } catch {
+      alert(t('importError'));
+    }
+  };
 
   const exportItinerary = () => {
     const blob = new Blob([JSON.stringify(overrides, null, 2)], { type: 'application/json' });
@@ -255,6 +286,33 @@ export default function SettingsView() {
         >
           🔄 {t('resetItinerary')}
         </button>
+      </div>
+
+      {/* Full backup / restore (everything on this phone, incl. personal) */}
+      <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+        <button
+          onClick={exportBackup}
+          className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium"
+        >
+          🗄️ {t('backupAll')}
+        </button>
+        <button
+          onClick={() => backupInput.current?.click()}
+          className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium"
+        >
+          ♻️ {t('restoreBackup')}
+        </button>
+        <input
+          ref={backupInput}
+          type="file"
+          accept="application/json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) restoreBackup(f);
+            e.target.value = '';
+          }}
+        />
       </div>
     </div>
   );

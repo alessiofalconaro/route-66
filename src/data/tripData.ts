@@ -366,8 +366,9 @@ export const SEGMENTS: Segment[] = [
     pois: [
       poi('zion-emerald', 'Emerald Pools Trail', 'Springdale, UT', 'nature', 'Emerald Pools Trail Zion', 180),
       poi('zion-riverside', 'Riverside Walk', 'Springdale, UT', 'nature', 'Riverside Walk Zion', 60),
+      // NOTE: Weeping Rock removed — the trail has been closed since the 2019
+      // rockfall and remains closed indefinitely.
       poi('zion-canyon-overlook', 'Canyon Overlook Trail', 'Springdale, UT', 'nature', 'Canyon Overlook Trail Zion', 60),
-      poi('zion-weeping-rock', 'Weeping Rock', 'Springdale, UT', 'nature', 'Weeping Rock Zion', 30),
       poi('zion-viewpoints', 'Scenic viewpoints', 'Springdale, UT', 'photo', 'Zion Canyon Scenic Drive', 60),
     ],
   },

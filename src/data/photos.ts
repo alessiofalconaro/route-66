@@ -69,7 +69,6 @@ export const PHOTOS: Record<string, string> = {
   "leg4-ok66-museum": "img/poi/leg4-ok66-museum.jpg",
   "leg7-yavapai": "img/poi/leg7-yavapai.jpg",
   "leg9-caesars": "img/poi/leg9-caesars.jpg",
-  "zion-weeping-rock": "img/poi/zion-weeping-rock.jpg",
   "chi-r66-sign": "img/poi/chi-r66-sign.jpg",
   "chi-bulls-store": "img/poi/chi-bulls-store.jpg",
   "leg1-lauterbach": "img/poi/leg1-lauterbach.jpg",

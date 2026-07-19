@@ -34,6 +34,19 @@ export default defineConfig({
           purpose: 'maskable',
         },
       ],
+      // Long-press on the app icon → quick jumps (Android; iOS ignores them)
+      shortcuts: [
+        {
+          name: 'Today',
+          url: './#/trip',
+          icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }],
+        },
+        {
+          name: 'Expenses',
+          url: './#/more/expenses',
+          icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }],
+        },
+      ],
     },
     workbox: {
       // Cache every built asset so the whole app works in airplane mode.
