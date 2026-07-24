@@ -363,19 +363,30 @@ function StorageManager() {
   const { overrides, setOverrides } = useOverrides();
   // Photos now live in IndexedDB (hundreds of MB) — loaded async.
   const [photos, setPhotos] = useState<{ id: string; bytes: number }[]>([]);
+  // Device-wide quota/usage for this app (photos dominate it) via the
+  // Storage API. undefined = the browser doesn't expose it (older iOS).
+  const [estimate, setEstimate] = useState<{ usage: number; quota: number } | undefined>();
   useEffect(() => {
     void listPhotos().then(setPhotos).catch(() => {});
+    // navigator.storage.estimate(): how much the whole origin uses and its cap.
+    if (navigator.storage?.estimate) {
+      void navigator.storage.estimate().then((e) => {
+        if (typeof e.usage === 'number' && typeof e.quota === 'number') {
+          setEstimate({ usage: e.usage, quota: e.quota });
+        }
+      });
+    }
   }, [overrides]);
 
-  // Bytes used in localStorage (×2: it stores UTF-16 characters). With the
-  // photos out of here this should stay far from the ~5 MB quota.
-  let totalBytes = 0;
+  // Bytes used in localStorage (×2: it stores UTF-16 characters). This is the
+  // small "app data (text)" store — photos are NOT here anymore.
+  let textBytes = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i)!;
-    if (k.startsWith('r66.')) totalBytes += (k.length + (localStorage.getItem(k)?.length ?? 0)) * 2;
+    if (k.startsWith('r66.')) textBytes += (k.length + (localStorage.getItem(k)?.length ?? 0)) * 2;
   }
-  const QUOTA = 5 * 1024 * 1024; // typical phone quota (iOS Safari: 5 MB)
-  const pct = Math.min(100, Math.round((totalBytes / QUOTA) * 100));
+  const TEXT_QUOTA = 5 * 1024 * 1024; // localStorage cap (iOS Safari: ~5 MB)
+  const textPct = Math.min(100, Math.round((textBytes / TEXT_QUOTA) * 100));
 
   const poiName = (id: string): string => {
     for (const s of SEGMENTS) {
@@ -392,6 +403,10 @@ function StorageManager() {
   const mb = (n: number) => (n / 1048576).toFixed(2);
   const kb = (n: number) => Math.max(1, Math.round(n / 1024));
   const photoBytes = photos.reduce((s, p) => s + p.bytes, 0);
+  // Space left for photos = whole-app quota minus what's already used. Photos
+  // are the only big consumer, so this is an honest "room for photos" figure.
+  const photoFreeMb = estimate ? Math.max(0, (estimate.quota - estimate.usage) / 1048576) : null;
+  const photoUsedPct = estimate ? Math.min(100, Math.round((estimate.usage / estimate.quota) * 100)) : null;
 
   /** Removes one photo everywhere: deletes the blob, strips the marker AND
    *  stamps the edit as "now", so the newest-wins sync deletes it from the
@@ -415,25 +430,40 @@ function StorageManager() {
   };
 
   return (
-    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-3">
       <h3 className="font-semibold text-sm">💾 {t('storageTitle')}</h3>
-      <div className="h-2 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
-        <div
-          className={`h-full ${pct > 80 ? 'bg-red-600' : 'bg-green-600'}`}
-          style={{ width: `${pct}%` }}
-        />
+
+      {/* --- PHOTOS: the big, important store (IndexedDB) --- */}
+      <div className="space-y-1.5">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-medium">📷 {t('storagePhotos')}</span>
+          <span className="text-xs text-stone-500 dark:text-stone-400">
+            {mb(photoBytes)} MB · {photos.length}
+          </span>
+        </div>
+        {photoFreeMb !== null ? (
+          <>
+            <div className="h-2 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
+              <div
+                className={`h-full ${(photoUsedPct ?? 0) > 80 ? 'bg-red-600' : 'bg-green-600'}`}
+                style={{ width: `${Math.max(2, photoUsedPct ?? 0)}%` }}
+              />
+            </div>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
+              ≈ {photoFreeMb.toFixed(0)} MB {t('storageFreeForPhotos')}
+            </p>
+          </>
+        ) : (
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t('storagePhotosPlenty')}</p>
+        )}
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('storageHint')}</p>
       </div>
-      <p className="text-xs text-stone-500 dark:text-stone-400">
-        {t('storageUsed')}: {mb(totalBytes)} / ~5 MB
-      </p>
+
+      {/* photo list (biggest first) */}
       {photos.length === 0 ? (
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('storagePhotosNone')}</p>
       ) : (
-        <>
-          <p className="text-xs text-stone-500 dark:text-stone-400">
-            📷 {t('storagePhotoSpace')}: {mb(photoBytes)} MB
-          </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400">{t('storageHint')}</p>
+        <div className="space-y-0.5">
           {photos.map((p) => (
             <div key={p.id} className="flex items-center gap-2 text-sm py-0.5">
               <span className="flex-1 min-w-0 truncate">{poiName(p.id)}</span>
@@ -448,8 +478,27 @@ function StorageManager() {
               </button>
             </div>
           ))}
-        </>
+        </div>
       )}
+
+      {/* --- APP DATA (text): the small localStorage store, de-emphasised --- */}
+      <div className="pt-1 border-t border-stone-200 dark:border-stone-700 space-y-1">
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs font-medium text-stone-600 dark:text-stone-300">
+            📝 {t('storageAppData')}
+          </span>
+          <span className="text-xs text-stone-500 dark:text-stone-400">
+            {mb(textBytes)} / ~5 MB
+          </span>
+        </div>
+        <div className="h-1.5 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
+          <div
+            className={`h-full ${textPct > 80 ? 'bg-red-600' : 'bg-stone-400 dark:bg-stone-500'}`}
+            style={{ width: `${Math.max(1, textPct)}%` }}
+          />
+        </div>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('storageAppDataHint')}</p>
+      </div>
     </div>
   );
 }

@@ -246,11 +246,13 @@ const en = {
   carDropoffLabel: 'Drop-off',
   // Storage manager (Settings)
   storageTitle: 'Storage on this phone',
-  storageUsed: 'Used',
+  storagePhotos: 'Photos',
+  storageFreeForPhotos: 'free for photos',
+  storagePhotosPlenty: 'Plenty of room — hundreds of MB available for photos.',
+  storageAppData: 'App data (text)',
+  storageAppDataHint: 'Settings, itinerary, lists — never photos. This little store stays nearly empty.',
   storagePhotosNone: 'No stop photos stored on this phone.',
-  storageHint:
-    'Deleting a photo here also deletes it on the other phones.',
-  storagePhotoSpace: 'Photos (separate storage, hundreds of MB available)',
+  storageHint: 'Deleting a photo here also deletes it on the other phones.',
 };
 
 const es: typeof en = {
@@ -469,11 +471,13 @@ const es: typeof en = {
   carPickupLabel: 'Recogida',
   carDropoffLabel: 'Entrega',
   storageTitle: 'Almacenamiento en este teléfono',
-  storageUsed: 'En uso',
+  storagePhotos: 'Fotos',
+  storageFreeForPhotos: 'libres para fotos',
+  storagePhotosPlenty: 'Espacio de sobra — cientos de MB disponibles para fotos.',
+  storageAppData: 'Datos de la app (texto)',
+  storageAppDataHint: 'Ajustes, itinerario, listas — nunca fotos. Este almacén pequeño se mantiene casi vacío.',
   storagePhotosNone: 'No hay fotos de paradas guardadas en este teléfono.',
-  storageHint:
-    'Borrar una foto aquí también la borra en los otros teléfonos.',
-  storagePhotoSpace: 'Fotos (almacenamiento aparte, cientos de MB disponibles)',
+  storageHint: 'Borrar una foto aquí también la borra en los otros teléfonos.',
 };
 
 const DICTS: Record<Lang, typeof en> = { en, es };
