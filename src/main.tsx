@@ -22,18 +22,56 @@ if (navigator.serviceWorker?.controller) {
   });
 }
 
-// 2. Actively look for new versions: every 15 minutes while the app is open,
-//    and every time the app comes back to the foreground.
+// 2. Actively look for new versions: every time the app comes back to the
+//    foreground (visibilitychange, plus pageshow/focus — iOS PWAs sometimes
+//    resume without firing visibilitychange) and every 5 minutes while open.
+//    A small throttle keeps rapid tab switches from spamming checks.
 registerSW({
   immediate: true,
   onRegisteredSW(_url, registration) {
     if (!registration) return;
-    setInterval(() => void registration.update(), 15 * 60 * 1000);
+
+    let lastCheck = Date.now();
+    const check = () => {
+      if (Date.now() - lastCheck < 60_000) return;
+      lastCheck = Date.now();
+      void registration.update();
+    };
+    setInterval(check, 5 * 60 * 1000);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') void registration.update();
+      if (document.visibilityState === 'visible') check();
+    });
+    window.addEventListener('pageshow', check);
+    window.addEventListener('focus', check);
+
+    // 3. While the new version downloads (the offline precache is ~6 MB, a
+    //    few seconds on mobile data) the OLD version is still on screen with
+    //    no clue an update is coming — show a small banner. When the new
+    //    service worker takes over, the reload in (1) swaps the app by itself.
+    registration.addEventListener('updatefound', () => {
+      // No controller = the very first install, not an update.
+      if (!navigator.serviceWorker.controller) return;
+      showUpdatingBanner();
     });
   },
 });
+
+/** Tiny "updating…" pill, framework-free because it can appear before React
+ *  renders. It disappears with the automatic reload. */
+function showUpdatingBanner(): void {
+  if (document.getElementById('sw-updating')) return;
+  const es = localStorage.getItem('r66.lang') === '"es"';
+  const el = document.createElement('div');
+  el.id = 'sw-updating';
+  el.setAttribute('role', 'status');
+  el.textContent = es ? '⬇️ Actualizando a la nueva versión…' : '⬇️ Updating to the new version…';
+  el.style.cssText =
+    'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;' +
+    'background:rgba(28,25,23,.92);color:#fff;font:500 13px system-ui;' +
+    'padding:8px 16px;border-radius:9999px;box-shadow:0 4px 12px rgba(0,0,0,.25);' +
+    'pointer-events:none';
+  document.body.appendChild(el);
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
