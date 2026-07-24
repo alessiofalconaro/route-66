@@ -144,6 +144,33 @@ export async function inflateOverrides(ov: UserOverrides): Promise<UserOverrides
   return { ...ov, editedPois, addedPois };
 }
 
+/**
+ * Deletes stored blobs that no longer have a marker pointing at them.
+ *
+ * WHY: when another phone deletes a photo, the sync removes the MARKER from
+ * our overrides, but the blob would stay behind in IndexedDB — invisible on
+ * the stop yet still listed in Settings and still using space. Pruning after
+ * every merge makes "delete" actually mean delete on every phone.
+ * Returns how many blobs were removed.
+ */
+export async function pruneOrphanPhotos(ov: UserOverrides): Promise<number> {
+  const referenced = new Set<string>();
+  for (const p of Object.values(ov.editedPois)) {
+    if (isPhotoRef(p.photo)) referenced.add(refId(p.photo!));
+  }
+  for (const pois of Object.values(ov.addedPois)) {
+    for (const p of pois) if (isPhotoRef(p.photo)) referenced.add(refId(p.photo!));
+  }
+  let removed = 0;
+  for (const { id } of await listPhotos()) {
+    if (!referenced.has(id)) {
+      await deletePhoto(id);
+      removed++;
+    }
+  }
+  return removed;
+}
+
 /** One-time startup migration (idempotent): if the saved overrides still
  *  carry inline photos (old app versions, or a restored backup), move them
  *  to IndexedDB and free the localStorage quota. Returns true if changed. */

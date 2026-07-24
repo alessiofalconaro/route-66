@@ -12,6 +12,7 @@ import {
   deletePhoto,
   inflateOverrides,
   listPhotos,
+  pruneOrphanPhotos,
 } from '../lib/photoStore';
 import { pullShared, pushShared } from '../lib/expenseSync';
 import { scheduleItineraryPush } from '../lib/itinerarySync';
@@ -367,7 +368,12 @@ function StorageManager() {
   // Storage API. undefined = the browser doesn't expose it (older iOS).
   const [estimate, setEstimate] = useState<{ usage: number; quota: number } | undefined>();
   useEffect(() => {
-    void listPhotos().then(setPhotos).catch(() => {});
+    // Prune first: a photo another phone deleted must not linger in the list
+    // (its marker is already gone, only the blob was left behind).
+    void pruneOrphanPhotos(overrides)
+      .then(() => listPhotos())
+      .then(setPhotos)
+      .catch(() => {});
     // navigator.storage.estimate(): how much the whole origin uses and its cap.
     if (navigator.storage?.estimate) {
       void navigator.storage.estimate().then((e) => {

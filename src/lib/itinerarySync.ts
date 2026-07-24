@@ -5,7 +5,13 @@
 import type { Poi, UserOverrides } from '../types';
 import { EMPTY_OVERRIDES } from '../types';
 import { loadJson, saveJson } from './storage';
-import { deflateOverrides, inflateOverrides, putPhoto, photoRef } from './photoStore';
+import {
+  deflateOverrides,
+  inflateOverrides,
+  pruneOrphanPhotos,
+  putPhoto,
+  photoRef,
+} from './photoStore';
 
 const ENDPOINT: string | undefined = import.meta.env.VITE_CHAT_ENDPOINT;
 
@@ -104,7 +110,9 @@ export async function pullItinerary(): Promise<boolean> {
 
     if (remote.resetAt > local.resetAt) {
       // someone reset the itinerary — adopt it wholesale (deflate its photos)
-      saveLocal({ ...remote, overrides: await deflateOverrides(remote.overrides) });
+      const adopted = await deflateOverrides(remote.overrides);
+      saveLocal({ ...remote, overrides: adopted });
+      await pruneOrphanPhotos(adopted); // a reset drops every old photo too
       return true;
     }
 
@@ -173,8 +181,11 @@ export async function pullItinerary(): Promise<boolean> {
       Object.keys(merged.overrides.addedPois).length >
         Object.keys(remote.overrides.addedPois).length;
     saveLocal(merged);
+    // Drop blobs nobody points at anymore — this is how a photo deleted on
+    // another phone stops taking space (and stops being listed) on this one.
+    const pruned = await pruneOrphanPhotos(merged.overrides);
     if (serverMissesSomething) scheduleItineraryPush();
-    return changedLocally;
+    return changedLocally || pruned > 0;
   } catch {
     return false; // offline — keep the local copy
   }
