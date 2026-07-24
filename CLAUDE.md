@@ -304,6 +304,7 @@ If any of these can't be met, stop and flag it rather than shipping something in
 - Set Vite `base: '/<repo-name>/'`.
 - Verify the service worker + manifest so the app is installable and offline-tested (Lighthouse PWA check).
 - If the chatbot online layer is enabled, deploy the Cloudflare Worker separately and store its URL in a client env var (the Worker URL is not secret; the key inside it is).
+- **⚠️ Worker deploy command (July 2026):** the root `wrangler.jsonc` + `.wrangler/deploy/config.json` (from `@cloudflare/vite-plugin`) REDIRECT any plain `wrangler` command to the app's asset build — even when run from `worker/`. Deploying the real Worker requires the explicit config: `npx wrangler deploy --config worker/wrangler.toml`. A plain `npx wrangler deploy` silently deploys the wrong worker ("route-66" assets instead of "route66-chat") and leaves the API stale.
 
 ---
 

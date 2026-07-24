@@ -89,6 +89,12 @@ export interface UserOverrides {
   addedPois: Record<string, Poi[]>;
   // custom display order of POI ids, per segment
   poiOrder: Record<string, string[]>;
+  // When each editedPois entry was last changed (ms epoch). The sync merges
+  // use it so the NEWEST edit of a stop wins per id — the old "remote/incoming
+  // wins" rule let a stale phone silently wipe newer edits (lost photos).
+  // Optional because copies saved before this field existed don't have it
+  // (missing timestamp = 0 = oldest).
+  editedAt?: Record<string, number>;
 }
 
 export const EMPTY_OVERRIDES: UserOverrides = {
@@ -96,4 +102,5 @@ export const EMPTY_OVERRIDES: UserOverrides = {
   editedPois: {},
   addedPois: {},
   poiOrder: {},
+  editedAt: {},
 };

@@ -19,6 +19,12 @@ description: How to build, launch and drive the Route 66 PWA to verify changes a
 - Language toggle for EN/ES checks: `localStorage.setItem('r66.lang','"es"'); location.reload()` (value is JSON, keep the inner quotes).
 - Sync is off in a fresh profile (no `r66.tripPin`), so edits stay local — safe to test.
 
+## Worker (local test)
+- Root `wrangler.jsonc` + `.wrangler/deploy/config.json` REDIRECT plain `wrangler` commands to the app asset build. Always pass the explicit config: `npx wrangler dev --config worker/wrangler.toml --port 8788` (and `deploy` likewise).
+- Dev secrets: `worker/.dev.vars` (gitignored) with dummy `TRIP_PIN`/`GROQ_API_KEY`.
+- Curl it with `-H "Origin: https://alessiofalconaro.github.io"` (CORS gate) and `-H "X-Trip-Pin: <pin>"`; always add `-m 20`.
+- Production probe without PIN: 401 = endpoint exists, 405 = route missing (old code).
+
 ## Gotchas
 - The dev page can re-render between screenshots (layout shifts) — re-screenshot before clicking modal buttons.
 - `read_page` a11y tree may omit some input values; trust screenshots.

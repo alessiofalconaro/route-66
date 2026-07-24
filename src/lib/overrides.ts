@@ -63,6 +63,8 @@ export function useOverrides() {
       setOverrides((ov) => ({
         ...ov,
         editedPois: { ...ov.editedPois, [poiId]: { ...ov.editedPois[poiId], ...changes } },
+        // per-stop timestamp: lets the sync keep the newest edit (see types.ts)
+        editedAt: { ...(ov.editedAt ?? {}), [poiId]: Date.now() },
       }));
       touchAndSync();
     },

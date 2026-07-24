@@ -123,6 +123,9 @@ interface ItinerarySnapshot {
     editedPois: Record<string, unknown>;
     addedPois: Record<string, unknown[]>;
     poiOrder: Record<string, string[]>;
+    // per-stop edit timestamps — the merge keeps the NEWEST edit per id
+    // (older clients don't send this; missing timestamp = 0 = oldest)
+    editedAt?: Record<string, number>;
   };
   updatedAt: number;
   resetAt: number;
@@ -158,12 +161,24 @@ function mergeItinerary(stored: ItinerarySnapshot, incoming: ItinerarySnapshot):
     for (const p of pois) byId.set((p as { id: string }).id, p);
     addedPois[segId] = [...byId.values()];
   }
+  // Per-stop edits: the NEWEST edit wins per id. A stale phone pushing an
+  // old copy can no longer wipe newer edits (this is how photos got lost).
+  const editedPois: Record<string, unknown> = { ...stored.overrides.editedPois };
+  const editedAt: Record<string, number> = { ...(stored.overrides.editedAt ?? {}) };
+  const incomingAt = incoming.overrides.editedAt ?? {};
+  for (const [id, edit] of Object.entries(incoming.overrides.editedPois)) {
+    if (!(id in editedPois) || (incomingAt[id] ?? 0) >= (editedAt[id] ?? 0)) {
+      editedPois[id] = edit;
+      if (incomingAt[id]) editedAt[id] = incomingAt[id];
+    }
+  }
   return {
     overrides: {
       removedPoiIds: [...new Set([...stored.overrides.removedPoiIds, ...incoming.overrides.removedPoiIds])],
-      editedPois: { ...stored.overrides.editedPois, ...incoming.overrides.editedPois },
+      editedPois,
       addedPois,
       poiOrder: { ...stored.overrides.poiOrder, ...incoming.overrides.poiOrder },
+      editedAt,
     },
     updatedAt: Date.now(),
     resetAt: Math.max(stored.resetAt, incoming.resetAt),

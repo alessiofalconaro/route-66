@@ -106,6 +106,11 @@ export default function SettingsView() {
       for (const p of Object.values(parsed.editedPois)) p.photo = safePhoto(p.photo);
       for (const pois of Object.values(parsed.addedPois))
         for (const p of pois) p.photo = safePhoto(p.photo);
+      // Stamp every imported edit as "now": an import is a deliberate restore,
+      // so it must WIN the newest-edit-wins merge on the server and on every
+      // phone (this is how a backup brings lost photos back for everyone).
+      const now = Date.now();
+      parsed.editedAt = Object.fromEntries(Object.keys(parsed.editedPois).map((id) => [id, now]));
       if (confirm(t('importConfirm'))) {
         setOverrides(parsed);
         // an import is an edit like any other → propagate to the other phones

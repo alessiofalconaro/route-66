@@ -93,21 +93,34 @@ export async function pullItinerary(): Promise<boolean> {
       return true;
     }
 
-    // Merge remote into local (remote wins per-key conflicts).
+    // Merge remote into local.
     const addedPois: UserOverrides['addedPois'] = { ...local.overrides.addedPois };
     for (const [segId, pois] of Object.entries(remote.overrides.addedPois)) {
       const byId = new Map((addedPois[segId] ?? []).map((p) => [p.id, p]));
       for (const p of pois) byId.set(p.id, p);
       addedPois[segId] = [...byId.values()];
     }
+    // Per-stop edits: the NEWEST edit wins (per-id timestamps). Entries with
+    // no timestamp (older app versions) count as 0, so anything stamped
+    // survives a stale copy — this is what protects the phone photos.
+    const editedPois: UserOverrides['editedPois'] = { ...local.overrides.editedPois };
+    const editedAt: Record<string, number> = { ...(local.overrides.editedAt ?? {}) };
+    const remoteAt = remote.overrides.editedAt ?? {};
+    for (const [id, edit] of Object.entries(remote.overrides.editedPois)) {
+      if (!(id in editedPois) || (remoteAt[id] ?? 0) >= (editedAt[id] ?? 0)) {
+        editedPois[id] = edit;
+        if (remoteAt[id]) editedAt[id] = remoteAt[id];
+      }
+    }
     const merged: ItinerarySnapshot = {
       overrides: {
         removedPoiIds: [
           ...new Set([...local.overrides.removedPoiIds, ...remote.overrides.removedPoiIds]),
         ],
-        editedPois: { ...local.overrides.editedPois, ...remote.overrides.editedPois },
+        editedPois,
         addedPois,
         poiOrder: { ...local.overrides.poiOrder, ...remote.overrides.poiOrder },
+        editedAt,
       },
       updatedAt: Math.max(local.updatedAt, remote.updatedAt),
       resetAt: Math.max(local.resetAt, remote.resetAt),
