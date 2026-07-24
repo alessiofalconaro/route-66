@@ -10,6 +10,7 @@ import { useTravelers } from './lib/travelers';
 import { useHashRoute } from './lib/router';
 import { pullItinerary } from './lib/itinerarySync';
 import { pullState } from './lib/stateSync';
+import { pullPlan } from './lib/planSync';
 import HomeView from './views/HomeView';
 import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
@@ -55,8 +56,8 @@ export default function App() {
   useEffect(() => {
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
     const sync = async () => {
-      const [a, b] = await Promise.all([pullItinerary(), pullState()]);
-      if (a || b) {
+      const [a, b, c] = await Promise.all([pullItinerary(), pullState(), pullPlan()]);
+      if (a || b || c) {
         setSyncGen((n) => n + 1);
         setToast(true);
         clearTimeout(toastTimer);

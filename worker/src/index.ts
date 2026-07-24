@@ -209,6 +209,101 @@ async function handleItinerary(
   return json(405, { error: 'method_not_allowed' });
 }
 
+// --- Chicago-plan sync (GET/PUT /plan) --------------------------------------
+// The user-edited Chicago day-by-day plan (added/edited/removed/reordered
+// steps), shared across the three phones. Same merge shape as /itinerary.
+interface PlanSnapshot {
+  overrides: {
+    removedStepIds: string[];
+    editedSteps: Record<string, unknown>;
+    addedSteps: Record<string, unknown[]>;
+    stepOrder: Record<string, string[]>;
+  };
+  updatedAt: number;
+  resetAt: number;
+}
+
+function validPlan(body: unknown): body is PlanSnapshot {
+  if (typeof body !== 'object' || body === null) return false;
+  const b = body as Record<string, unknown>;
+  if (typeof b.updatedAt !== 'number' || typeof b.resetAt !== 'number') return false;
+  const o = b.overrides as Record<string, unknown> | undefined;
+  return (
+    typeof o === 'object' && o !== null &&
+    Array.isArray(o.removedStepIds) &&
+    typeof o.editedSteps === 'object' && o.editedSteps !== null &&
+    typeof o.addedSteps === 'object' && o.addedSteps !== null &&
+    typeof o.stepOrder === 'object' && o.stepOrder !== null
+  );
+}
+
+const EMPTY_PLAN: PlanSnapshot = {
+  overrides: { removedStepIds: [], editedSteps: {}, addedSteps: {}, stepOrder: {} },
+  updatedAt: 0,
+  resetAt: 0,
+};
+
+function mergePlan(stored: PlanSnapshot, incoming: PlanSnapshot): PlanSnapshot {
+  // A fresher "reset to default" wipes the slate on purpose.
+  if (incoming.resetAt > stored.resetAt) return { ...incoming, updatedAt: Date.now() };
+  // Merge added steps per day by step id (incoming wins per id).
+  const addedSteps: Record<string, unknown[]> = { ...stored.overrides.addedSteps };
+  for (const [dayId, steps] of Object.entries(incoming.overrides.addedSteps)) {
+    const byId = new Map((addedSteps[dayId] ?? []).map((s) => [(s as { id: string }).id, s]));
+    for (const s of steps) byId.set((s as { id: string }).id, s);
+    addedSteps[dayId] = [...byId.values()];
+  }
+  return {
+    overrides: {
+      removedStepIds: [...new Set([...stored.overrides.removedStepIds, ...incoming.overrides.removedStepIds])],
+      editedSteps: { ...stored.overrides.editedSteps, ...incoming.overrides.editedSteps },
+      addedSteps,
+      stepOrder: { ...stored.overrides.stepOrder, ...incoming.overrides.stepOrder },
+    },
+    updatedAt: Date.now(),
+    resetAt: Math.max(stored.resetAt, incoming.resetAt),
+  };
+}
+
+async function handlePlan(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const json = (status: number, data: unknown) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json' },
+    });
+
+  if (!env.TRIP_PIN) return json(503, { error: 'sync_not_configured' });
+  if (request.headers.get('X-Trip-Pin') !== env.TRIP_PIN) return json(401, { error: 'bad_pin' });
+
+  if (request.method === 'GET') {
+    const raw = await env.EXPENSES.get('chicago-plan');
+    return json(200, raw ? (JSON.parse(raw) as PlanSnapshot) : EMPTY_PLAN);
+  }
+
+  if (request.method === 'PUT') {
+    const text = await request.text();
+    if (text.length > 1024 * 1024) return json(413, { error: 'too_large' });
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      return json(400, { error: 'bad_json' });
+    }
+    if (!validPlan(body)) return json(400, { error: 'bad_request' });
+    const raw = await env.EXPENSES.get('chicago-plan');
+    const stored = raw ? (JSON.parse(raw) as PlanSnapshot) : EMPTY_PLAN;
+    const merged = mergePlan(stored, body);
+    await env.EXPENSES.put('chicago-plan', JSON.stringify(merged));
+    return json(200, merged);
+  }
+
+  return json(405, { error: 'method_not_allowed' });
+}
+
 // --- shared state sync (GET/PUT /state) -------------------------------------
 // Shopping list + "seen it" checkmarks, shared by all three phones.
 // Items merge by id with tombstones; checkmarks and the list order use
@@ -399,6 +494,7 @@ export default {
     const pathname = new URL(request.url).pathname;
     if (pathname === '/expenses') return handleExpenses(request, env, cors);
     if (pathname === '/itinerary') return handleItinerary(request, env, cors);
+    if (pathname === '/plan') return handlePlan(request, env, cors);
     if (pathname === '/state') return handleState(request, env, cors);
 
     if (request.method !== 'POST') {

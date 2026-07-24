@@ -245,6 +245,14 @@ export const SEGMENTS: Segment[] = [
       poi('chi-art-institute', 'Art Institute of Chicago', 'Chicago, IL', 'museum', 'Art Institute of Chicago', 150),
       poi('chi-united-center', 'United Center + Michael Jordan statue', 'Chicago, IL', 'nba', 'United Center Chicago', 60, `Bulls arena. "The Spirit" MJ statue on the east plaza, free photo op. ${NBA_NOTE}`),
       poi('chi-bulls-store', 'Bulls team store', 'Chicago, IL', 'nba', 'Chicago Bulls team store United Center', 30, NBA_NOTE),
+      poi('chi-r66-end-sign', 'End Historic Route 66 sign', 'Chicago, IL', 'photo', 'End Historic Route 66 sign Jackson Boulevard Chicago', 10, 'Jackson Blvd, one block south of the Begin sign.'),
+      poi('chi-r66-new-begin', 'New Route 66 Begin sign', 'Chicago, IL', 'photo', '41.89121,-87.60923', 10, 'Near Navy Pier — pair it with the evening walk.'),
+      poi('chi-river-cruise', 'Chicago River architecture cruise', 'Chicago, IL', 'city', '41.88921,-87.62442', 120, 'Meeting point at Michigan Ave / Wacker. Book the ~10:00 AM cruise ahead; be there 30 min early. ~90 min on the water.'),
+      poi('chi-theatre', 'The Chicago Theatre', 'Chicago, IL', 'photo', 'The Chicago Theatre', 15, 'Iconic marquee — exterior photo stop. Inside only via the guided tour (usually noon, select days).'),
+      poi('chi-starbucks-reserve', 'Starbucks Reserve Roastery', 'Chicago, IL', 'food', 'Starbucks Reserve Roastery Chicago', 45, 'Optional — world’s largest Starbucks (5 floors) on Michigan Ave, only if passing by.'),
+      poi('chi-nutella-cafe', 'Nutella Cafe', 'Chicago, IL', 'food', 'Nutella Cafe Chicago', 40, 'Optional — sweet break near Millennium Park, only if passing by.'),
+      poi('chi-alice-wonder', 'Alice & Wonder – State', 'Chicago, IL', 'other', 'Alice and Wonder State Street Chicago', 30, 'Chicago souvenir & apparel boutique near the hotel.'),
+      poi('chi-hertz-pickup', 'Hertz — car pickup (Aug 5)', 'Chicago, IL', 'other', 'Hertz Car Rental - Chicago - West Washington Street', 30, 'Rental pickup Aug 5 ~9:00 AM. ~5 min taxi (or ~20 min walk) from the hotel; United Center is then on the way out of the city.'),
     ],
   },
   {
@@ -436,6 +444,7 @@ export const SEGMENTS: Segment[] = [
       poi('la-academy-museum', 'Academy Museum of Motion Pictures', 'Los Angeles, CA', 'museum', 'Academy Museum of Motion Pictures', 150),
       poi('la-crypto-arena', 'Crypto.com Arena + Star Plaza statues', 'Los Angeles, CA', 'nba', 'Crypto.com Arena Star Plaza', 60, `Lakers arena. Statues of Kobe, Magic, Kareem, Shaq, Jerry West, Elgin Baylor outside. Lakers team store. ${NBA_NOTE}`),
       poi('la-intuit-dome', 'Intuit Dome + Clippers store', 'Los Angeles, CA', 'nba', 'Intuit Dome Inglewood', 60, `Clippers arena (opened 2024), in Inglewood near LAX — perfect on the way to the LAX car drop-off. ${NBA_NOTE}`),
+      poi('la-lax-car-return', 'LAX Rental Car Return Center — drop-off (Aug 19)', 'Los Angeles, CA', 'other', 'LAX RENTAL CAR RETURN CENTER', 30, 'Return the Hertz car here Aug 19, then shuttle to the terminal — allow extra time before the flight. Intuit Dome is nearby on the way.'),
     ],
   },
 ];

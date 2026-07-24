@@ -23,6 +23,15 @@ export default function CityView({ cityId }: { cityId: string }) {
     return (
       <div className="space-y-3">
         <LocalInfoCard cityId={cityId} />
+        {/* Chicago has a full timed walking plan — shortcut to it */}
+        {cityId === 'chicago' && (
+          <a
+            href="#/more/plan"
+            className="block rounded-xl bg-red-700 text-white shadow-sm p-3 text-sm font-medium"
+          >
+            🗺️ {t('chiPlanTitle')} →
+          </a>
+        )}
         <SegmentView segment={dedicated} />
       </div>
     );

@@ -227,6 +227,19 @@ const en = {
   // NBA
   nbaBadge: 'NBA',
   nbaOffseason: 'August = NBA offseason. Verify hours & jersey stock before going.',
+  // Chicago day-by-day plan
+  chiPlanTitle: 'Chicago plan (Aug 3–5)',
+  chiPlanHint:
+    'Suggested walking route with public transit and time estimates. Dinner is always around 8–9 PM. Tap Edit to adjust — changes sync to all three phones.',
+  planOptional: 'Optional',
+  planWalk: 'walk',
+  planBus: 'bus',
+  planCar: 'car',
+  planTaxi: 'taxi',
+  planNoTransit: 'No transfer',
+  planTime: 'Time',
+  planResetBtn: 'Reset plan to default',
+  planResetConfirm: 'Discard ALL plan edits and restore the suggested plan?',
 };
 
 const es: typeof en = {
@@ -429,6 +442,18 @@ const es: typeof en = {
   firstRunHint: 'Solo se usa para el saludo — puedes cambiarlo en Ajustes.',
   nbaBadge: 'NBA',
   nbaOffseason: 'Agosto = temporada baja NBA. Verifica horarios y stock de camisetas antes de ir.',
+  chiPlanTitle: 'Plan de Chicago (3–5 ago)',
+  chiPlanHint:
+    'Ruta sugerida a pie con transporte público y tiempos estimados. La cena es siempre sobre las 20–21 h. Toca Editar para ajustarlo — los cambios se sincronizan en los tres teléfonos.',
+  planOptional: 'Opcional',
+  planWalk: 'a pie',
+  planBus: 'bus',
+  planCar: 'coche',
+  planTaxi: 'taxi',
+  planNoTransit: 'Sin desplazamiento',
+  planTime: 'Hora',
+  planResetBtn: 'Restablecer el plan original',
+  planResetConfirm: '¿Descartar TODOS los cambios y restaurar el plan sugerido?',
 };
 
 const DICTS: Record<Lang, typeof en> = { en, es };
