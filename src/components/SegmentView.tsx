@@ -3,7 +3,8 @@
 // This is also the itinerary EDITOR: toggle "Edit" to reorder/edit/remove/add.
 import { useState } from 'react';
 import type { Poi, Segment } from '../types';
-import { hotelById } from '../data/tripData';
+import { CAR_RENTAL, hotelById } from '../data/tripData';
+import { mapsUrl } from '../lib/maps';
 import { mergePois, useOverrides } from '../lib/overrides';
 import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
@@ -123,6 +124,31 @@ export default function SegmentView({ segment }: { segment: Segment }) {
         <div>
           <h3 className="font-semibold text-sm mb-1">🌙 {t('tonightsHotel')}</h3>
           <HotelCard hotel={hotel} />
+        </div>
+      )}
+
+      {/* Rental car pickup/drop-off (Chicago and LA only) — its own section,
+          deliberately NOT part of the editable stops list. */}
+      {CAR_RENTAL[segment.id] && (
+        <div>
+          <h3 className="font-semibold text-sm mb-1">🚗 {t('carRentalTitle')}</h3>
+          <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-1">
+            <p className="text-xs font-semibold text-red-700 dark:text-red-400">
+              {CAR_RENTAL[segment.id].kind === 'pickup' ? t('carPickupLabel') : t('carDropoffLabel')}
+              {' · '}
+              {CAR_RENTAL[segment.id].date}
+            </p>
+            <p className="font-medium text-sm leading-tight">{CAR_RENTAL[segment.id].name}</p>
+            <p className="text-xs text-stone-600 dark:text-stone-300">{CAR_RENTAL[segment.id].note}</p>
+            <a
+              href={mapsUrl(CAR_RENTAL[segment.id].mapsQuery)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-xs font-medium text-red-700 dark:text-red-400"
+            >
+              📍 {t('openInMaps')}
+            </a>
+          </div>
         </div>
       )}
 

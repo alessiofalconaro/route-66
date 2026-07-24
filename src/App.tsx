@@ -78,7 +78,7 @@ export default function App() {
   const goTab = (id: Tab) => {
     if (id === tab) {
       if (router.route.length > 1) router.navigate(id);
-      else mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      else scrollToTop();
       return;
     }
     router.navigate(id === 'home' ? lastHomeRoute.current : id);
@@ -164,11 +164,39 @@ export default function App() {
     goTab(id);
   };
 
+  /** Scroll the content back to the top (top-edge tap strip + dock re-tap).
+   *  Tries the smooth animation first; some environments silently ignore
+   *  programmatic smooth scrolls (e.g. OS "reduce motion" settings), so if
+   *  nothing has moved shortly after, jump to the top instantly. */
+  const scrollToTop = () => {
+    const el = mainRef.current;
+    if (!el) return;
+    const before = el.scrollTop;
+    el.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      if (el.scrollTop >= before && el.scrollTop > 0) el.scrollTop = 0;
+    }, 200);
+  };
+
   return (
     <div className="h-full flex flex-col max-w-lg mx-auto">
-      {/* Greeting bar (cosmetic use of "who am I") */}
+      {/* iPhone-style "tap the top of the screen to scroll to top". The real
+          iOS status bar can't send taps to a web app, so the app's own top
+          edge does it: an invisible fixed strip (safe-area + a few px) that
+          works the same on Android. */}
+      <div
+        aria-hidden="true"
+        onClick={scrollToTop}
+        className="fixed top-0 inset-x-0 z-40"
+        style={{ height: 'calc(env(safe-area-inset-top, 0px) + 14px)' }}
+      />
+
+      {/* Greeting bar (cosmetic use of "who am I") — also taps back to top */}
       {whoAmI && (
-        <p className="text-xs text-stone-500 dark:text-stone-400 px-4 pt-2 shrink-0">
+        <p
+          onClick={scrollToTop}
+          className="text-xs text-stone-500 dark:text-stone-400 px-4 pt-2 shrink-0"
+        >
           {t('greeting')}, {nameOf(whoAmI)}! 👋
         </p>
       )}

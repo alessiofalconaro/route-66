@@ -240,6 +240,10 @@ const en = {
   planTime: 'Time',
   planResetBtn: 'Reset plan to default',
   planResetConfirm: 'Discard ALL plan edits and restore the suggested plan?',
+  // Rental car section (Chicago pickup / LAX drop-off)
+  carRentalTitle: 'Rental car',
+  carPickupLabel: 'Pickup',
+  carDropoffLabel: 'Drop-off',
 };
 
 const es: typeof en = {
@@ -454,6 +458,9 @@ const es: typeof en = {
   planTime: 'Hora',
   planResetBtn: 'Restablecer el plan original',
   planResetConfirm: '¿Descartar TODOS los cambios y restaurar el plan sugerido?',
+  carRentalTitle: 'Coche de alquiler',
+  carPickupLabel: 'Recogida',
+  carDropoffLabel: 'Entrega',
 };
 
 const DICTS: Record<Lang, typeof en> = { en, es };

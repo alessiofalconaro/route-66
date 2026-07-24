@@ -252,7 +252,6 @@ export const SEGMENTS: Segment[] = [
       poi('chi-starbucks-reserve', 'Starbucks Reserve Roastery', 'Chicago, IL', 'food', 'Starbucks Reserve Roastery Chicago', 45, 'Optional — world’s largest Starbucks (5 floors) on Michigan Ave, only if passing by.'),
       poi('chi-nutella-cafe', 'Nutella Cafe', 'Chicago, IL', 'food', 'Nutella Cafe Chicago', 40, 'Optional — sweet break near Millennium Park, only if passing by.'),
       poi('chi-alice-wonder', 'Alice & Wonder – State', 'Chicago, IL', 'other', 'Alice and Wonder State Street Chicago', 30, 'Chicago souvenir & apparel boutique near the hotel.'),
-      poi('chi-hertz-pickup', 'Hertz — car pickup (Aug 5)', 'Chicago, IL', 'other', 'Hertz Car Rental - Chicago - West Washington Street', 30, 'Rental pickup Aug 5 ~9:00 AM. ~5 min taxi (or ~20 min walk) from the hotel; United Center is then on the way out of the city.'),
     ],
   },
   {
@@ -444,10 +443,39 @@ export const SEGMENTS: Segment[] = [
       poi('la-academy-museum', 'Academy Museum of Motion Pictures', 'Los Angeles, CA', 'museum', 'Academy Museum of Motion Pictures', 150),
       poi('la-crypto-arena', 'Crypto.com Arena + Star Plaza statues', 'Los Angeles, CA', 'nba', 'Crypto.com Arena Star Plaza', 60, `Lakers arena. Statues of Kobe, Magic, Kareem, Shaq, Jerry West, Elgin Baylor outside. Lakers team store. ${NBA_NOTE}`),
       poi('la-intuit-dome', 'Intuit Dome + Clippers store', 'Los Angeles, CA', 'nba', 'Intuit Dome Inglewood', 60, `Clippers arena (opened 2024), in Inglewood near LAX — perfect on the way to the LAX car drop-off. ${NBA_NOTE}`),
-      poi('la-lax-car-return', 'LAX Rental Car Return Center — drop-off (Aug 19)', 'Los Angeles, CA', 'other', 'LAX RENTAL CAR RETURN CENTER', 30, 'Return the Hertz car here Aug 19, then shuttle to the terminal — allow extra time before the flight. Intuit Dome is nearby on the way.'),
     ],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Rental car pickup/drop-off — shown as their own "Rental car" section under
+// the hotel on the Chicago and Los Angeles city views (NOT mixed into the
+// stops, by the human's choice). Keyed by segment id.
+// ---------------------------------------------------------------------------
+export interface CarRentalStop {
+  kind: 'pickup' | 'dropoff';
+  name: string;
+  date: string;
+  note: string;
+  mapsQuery: string;
+}
+
+export const CAR_RENTAL: Record<string, CarRentalStop> = {
+  chicago: {
+    kind: 'pickup',
+    name: 'Hertz Car Rental – Chicago – West Washington Street',
+    date: 'Aug 5 · ~9:00 AM',
+    note: '~5 min taxi (or ~20 min walk) from the hotel; United Center is then on the way out of the city.',
+    mapsQuery: 'Hertz Car Rental - Chicago - West Washington Street',
+  },
+  'los-angeles': {
+    kind: 'dropoff',
+    name: 'LAX Rental Car Return Center',
+    date: 'Aug 19',
+    note: 'Return the car, then shuttle to the terminal — allow extra time before the flight. Intuit Dome is nearby on the way.',
+    mapsQuery: 'LAX RENTAL CAR RETURN CENTER',
+  },
+};
 
 // Attach fuel stops to their segments (kept separate above for readability).
 for (const seg of SEGMENTS) {
