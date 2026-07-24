@@ -6,6 +6,7 @@ import { useTheme, type Theme } from '../lib/theme';
 import { useTravelers } from '../lib/travelers';
 import { loadJson, saveJson, usePersistentState } from '../lib/storage';
 import { useOverrides } from '../lib/overrides';
+import { SEGMENTS } from '../data/tripData';
 import { pullShared, pushShared } from '../lib/expenseSync';
 import { scheduleItineraryPush } from '../lib/itinerarySync';
 import { EMPTY_OVERRIDES, type Expense, type UserOverrides } from '../types';
@@ -274,6 +275,8 @@ export default function SettingsView() {
 
       <CategoryManager />
 
+      <StorageManager />
+
       {/* Itinerary data management */}
       <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
         <button onClick={exportItinerary} className="w-full rounded-lg bg-stone-200 dark:bg-stone-700 py-2 text-sm font-medium">
@@ -328,6 +331,111 @@ export default function SettingsView() {
           }}
         />
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Storage manager: shows how full the phone's app storage is and lists every
+// stop photo saved locally (biggest first) with a delete button. Photos are
+// what fills the ~5 MB localStorage quota (browsers count every character as
+// 2 bytes, so the effective budget is small); a full store silently loses
+// edits, so the user needs a way to SEE and free the space.
+// ---------------------------------------------------------------------------
+function StorageManager() {
+  const { t } = useI18n();
+  const { overrides, setOverrides } = useOverrides();
+
+  // Total bytes used by the app (×2: localStorage stores UTF-16 characters).
+  let totalBytes = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)!;
+    if (k.startsWith('r66.')) totalBytes += (k.length + (localStorage.getItem(k)?.length ?? 0)) * 2;
+  }
+  const QUOTA = 5 * 1024 * 1024; // typical phone quota (iOS Safari: 5 MB)
+  const pct = Math.min(100, Math.round((totalBytes / QUOTA) * 100));
+
+  const poiName = (id: string): string => {
+    for (const s of SEGMENTS) {
+      const p = s.pois.find((x) => x.id === id);
+      if (p) return p.name;
+    }
+    for (const pois of Object.values(overrides.addedPois)) {
+      const p = pois.find((x) => x.id === id);
+      if (p) return p.name;
+    }
+    return id; // photo of a stop that no longer exists — still frees space
+  };
+
+  // Every data-URL photo stored on this phone, biggest first.
+  const photos: { id: string; name: string; bytes: number }[] = [];
+  for (const [id, p] of Object.entries(overrides.editedPois)) {
+    if (p.photo?.startsWith('data:')) photos.push({ id, name: poiName(id), bytes: p.photo.length * 2 });
+  }
+  for (const pois of Object.values(overrides.addedPois)) {
+    for (const p of pois) {
+      if (p.photo?.startsWith('data:') && !overrides.editedPois[p.id]?.photo) {
+        photos.push({ id: p.id, name: p.name, bytes: p.photo.length * 2 });
+      }
+    }
+  }
+  photos.sort((a, b) => b.bytes - a.bytes);
+
+  const mb = (n: number) => (n / 1048576).toFixed(2);
+  const kb = (n: number) => Math.max(1, Math.round(n / 1024));
+
+  /** Removes one photo everywhere: strips it from the local copies AND stamps
+   *  the edit as "now", so the newest-wins sync deletes it from the server
+   *  and the other phones too (JSON drops `photo: undefined` on push). */
+  const removePhoto = (id: string) => {
+    setOverrides((ov) => ({
+      ...ov,
+      editedPois: { ...ov.editedPois, [id]: { ...ov.editedPois[id], photo: undefined } },
+      editedAt: { ...(ov.editedAt ?? {}), [id]: Date.now() },
+      addedPois: Object.fromEntries(
+        Object.entries(ov.addedPois).map(([seg, pois]) => [
+          seg,
+          pois.map((p) => (p.id === id ? { ...p, photo: undefined } : p)),
+        ]),
+      ),
+    }));
+    saveJson('overridesUpdatedAt', Date.now());
+    scheduleItineraryPush();
+  };
+
+  return (
+    <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-2">
+      <h3 className="font-semibold text-sm">💾 {t('storageTitle')}</h3>
+      <div className="h-2 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden">
+        <div
+          className={`h-full ${pct > 80 ? 'bg-red-600' : 'bg-green-600'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-xs text-stone-500 dark:text-stone-400">
+        {t('storageUsed')}: {mb(totalBytes)} / ~5 MB
+      </p>
+      {photos.length === 0 ? (
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t('storagePhotosNone')}</p>
+      ) : (
+        <>
+          <p className="text-xs text-stone-500 dark:text-stone-400">{t('storageHint')}</p>
+          {photos.map((p) => (
+            <div key={p.id} className="flex items-center gap-2 text-sm py-0.5">
+              <span className="flex-1 min-w-0 truncate">{p.name}</span>
+              <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
+                {kb(p.bytes)} KB
+              </span>
+              <button
+                onClick={() => confirm(`${t('removePhoto')} — ${p.name}?`) && removePhoto(p.id)}
+                className="shrink-0 px-2 py-1 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-xs font-medium"
+              >
+                🗑️ {t('removePhoto')}
+              </button>
+            </div>
+          ))}
+        </>
+      )}
     </div>
   );
 }

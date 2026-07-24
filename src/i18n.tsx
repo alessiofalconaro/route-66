@@ -244,6 +244,12 @@ const en = {
   carRentalTitle: 'Rental car',
   carPickupLabel: 'Pickup',
   carDropoffLabel: 'Drop-off',
+  // Storage manager (Settings)
+  storageTitle: 'Storage on this phone',
+  storageUsed: 'Used',
+  storagePhotosNone: 'No stop photos stored on this phone.',
+  storageHint:
+    'Photos fill the storage. Deleting one here also deletes it on the other phones.',
 };
 
 const es: typeof en = {
@@ -461,6 +467,11 @@ const es: typeof en = {
   carRentalTitle: 'Coche de alquiler',
   carPickupLabel: 'Recogida',
   carDropoffLabel: 'Entrega',
+  storageTitle: 'Almacenamiento en este teléfono',
+  storageUsed: 'En uso',
+  storagePhotosNone: 'No hay fotos de paradas guardadas en este teléfono.',
+  storageHint:
+    'Las fotos llenan el almacenamiento. Borrar una aquí también la borra en los otros teléfonos.',
 };
 
 const DICTS: Record<Lang, typeof en> = { en, es };
