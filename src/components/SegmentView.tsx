@@ -6,6 +6,7 @@ import type { Poi, Segment } from '../types';
 import { CAR_RENTAL, hotelById } from '../data/tripData';
 import { mapsUrl } from '../lib/maps';
 import { mergePois, useOverrides } from '../lib/overrides';
+import { photoRef, putPhoto } from '../lib/photoStore';
 import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
@@ -158,12 +159,20 @@ export default function SegmentView({ segment }: { segment: Segment }) {
           initial={modal === 'new' ? undefined : modal}
           defaultCity={defaultCity}
           onCancel={() => setModal(null)}
-          onSave={(data) => {
+          onSave={async (data) => {
+            // crypto.randomUUID() = built-in unique id generator (like Java's UUID)
+            const id = modal === 'new' ? `user-${crypto.randomUUID()}` : modal.id;
+            // A freshly picked photo is a big data-URL: store the blob in
+            // IndexedDB and keep only a tiny "idb:" marker in the overrides,
+            // so the ~5 MB localStorage quota never fills up again.
+            if (data.photo?.startsWith('data:')) {
+              await putPhoto(id, data.photo);
+              data = { ...data, photo: photoRef(id) };
+            }
             if (modal === 'new') {
-              // crypto.randomUUID() = built-in unique id generator (like Java's UUID)
-              addPoi(segment.id, { ...data, id: `user-${crypto.randomUUID()}` });
+              addPoi(segment.id, { ...data, id });
             } else {
-              editPoi(modal.id, data);
+              editPoi(id, data);
             }
             setModal(null);
           }}

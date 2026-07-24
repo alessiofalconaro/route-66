@@ -1,6 +1,7 @@
 import type { Poi, Category } from '../types';
 import { mapsUrl } from '../lib/maps';
 import { PHOTOS } from '../data/photos';
+import { usePhoto } from '../lib/photoStore';
 import { useI18n } from '../i18n';
 
 // One emoji per category — works offline, no image downloads needed.
@@ -51,9 +52,11 @@ export default function PoiCard({
   const { t } = useI18n();
 
   // Photo: explicit poi.photo, else the bundled Wikipedia image for this id.
-  // BASE_URL = '/route-66/' on GitHub Pages.
-  const photo =
-    poi.photo ?? (PHOTOS[poi.id] ? import.meta.env.BASE_URL + PHOTOS[poi.id] : undefined);
+  // BASE_URL = '/route-66/' on GitHub Pages. usePhoto resolves "idb:" markers
+  // (phone photos stored in IndexedDB) and passes URLs/paths through.
+  const photo = usePhoto(
+    poi.photo ?? (PHOTOS[poi.id] ? import.meta.env.BASE_URL + PHOTOS[poi.id] : undefined),
+  );
 
   return (
     <div

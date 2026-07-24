@@ -11,6 +11,7 @@ import { useHashRoute } from './lib/router';
 import { pullItinerary } from './lib/itinerarySync';
 import { pullState } from './lib/stateSync';
 import { pullPlan } from './lib/planSync';
+import { migratePhotosToIdb } from './lib/photoStore';
 import HomeView from './views/HomeView';
 import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
@@ -56,8 +57,11 @@ export default function App() {
   useEffect(() => {
     let toastTimer: ReturnType<typeof setTimeout> | undefined;
     const sync = async () => {
+      // First move any inline photos to IndexedDB (frees the localStorage
+      // quota), then pull the shared data.
+      const migrated = await migratePhotosToIdb().catch(() => false);
       const [a, b, c] = await Promise.all([pullItinerary(), pullState(), pullPlan()]);
-      if (a || b || c) {
+      if (migrated || a || b || c) {
         setSyncGen((n) => n + 1);
         setToast(true);
         clearTimeout(toastTimer);

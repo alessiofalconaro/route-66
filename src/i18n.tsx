@@ -249,7 +249,8 @@ const en = {
   storageUsed: 'Used',
   storagePhotosNone: 'No stop photos stored on this phone.',
   storageHint:
-    'Photos fill the storage. Deleting one here also deletes it on the other phones.',
+    'Deleting a photo here also deletes it on the other phones.',
+  storagePhotoSpace: 'Photos (separate storage, hundreds of MB available)',
 };
 
 const es: typeof en = {
@@ -471,7 +472,8 @@ const es: typeof en = {
   storageUsed: 'En uso',
   storagePhotosNone: 'No hay fotos de paradas guardadas en este teléfono.',
   storageHint:
-    'Las fotos llenan el almacenamiento. Borrar una aquí también la borra en los otros teléfonos.',
+    'Borrar una foto aquí también la borra en los otros teléfonos.',
+  storagePhotoSpace: 'Fotos (almacenamiento aparte, cientos de MB disponibles)',
 };
 
 const DICTS: Record<Lang, typeof en> = { en, es };

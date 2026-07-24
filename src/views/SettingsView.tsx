@@ -1,12 +1,18 @@
 // Settings: language, theme, travelers, album URL, trip PIN (with live
 // verification), custom-category manager, itinerary reset/export/import.
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n, type Lang } from '../i18n';
 import { useTheme, type Theme } from '../lib/theme';
 import { useTravelers } from '../lib/travelers';
 import { loadJson, saveJson, usePersistentState } from '../lib/storage';
 import { useOverrides } from '../lib/overrides';
 import { SEGMENTS } from '../data/tripData';
+import {
+  deflateOverrides,
+  deletePhoto,
+  inflateOverrides,
+  listPhotos,
+} from '../lib/photoStore';
 import { pullShared, pushShared } from '../lib/expenseSync';
 import { scheduleItineraryPush } from '../lib/itinerarySync';
 import { EMPTY_OVERRIDES, type Expense, type UserOverrides } from '../types';
@@ -50,11 +56,18 @@ export default function SettingsView() {
   const backupInput = useRef<HTMLInputElement>(null);
 
   // ---- FULL backup: every r66.* key (expenses, itinerary, settings...) ----
-  const exportBackup = () => {
+  // Photos live in IndexedDB as "idb:" markers — the backup inflates them to
+  // full data-URLs so the file is self-contained (restore re-extracts them).
+  const exportBackup = async () => {
     const data: Record<string, string> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)!;
       if (key.startsWith('r66.')) data[key] = localStorage.getItem(key)!;
+    }
+    if (data['r66.overrides']) {
+      data['r66.overrides'] = JSON.stringify(
+        await inflateOverrides(JSON.parse(data['r66.overrides']) as UserOverrides),
+      );
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
@@ -79,8 +92,10 @@ export default function SettingsView() {
     }
   };
 
-  const exportItinerary = () => {
-    const blob = new Blob([JSON.stringify(overrides, null, 2)], { type: 'application/json' });
+  const exportItinerary = async () => {
+    // Inflate "idb:" markers so the exported file carries the actual photos.
+    const full = await inflateOverrides(overrides);
+    const blob = new Blob([JSON.stringify(full, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'route66-itinerary.json';
@@ -113,7 +128,8 @@ export default function SettingsView() {
       const now = Date.now();
       parsed.editedAt = Object.fromEntries(Object.keys(parsed.editedPois).map((id) => [id, now]));
       if (confirm(t('importConfirm'))) {
-        setOverrides(parsed);
+        // Photos go straight to IndexedDB; only tiny markers hit localStorage.
+        setOverrides(await deflateOverrides(parsed));
         // an import is an edit like any other → propagate to the other phones
         saveJson('overridesUpdatedAt', Date.now());
         scheduleItineraryPush();
@@ -345,8 +361,14 @@ export default function SettingsView() {
 function StorageManager() {
   const { t } = useI18n();
   const { overrides, setOverrides } = useOverrides();
+  // Photos now live in IndexedDB (hundreds of MB) — loaded async.
+  const [photos, setPhotos] = useState<{ id: string; bytes: number }[]>([]);
+  useEffect(() => {
+    void listPhotos().then(setPhotos).catch(() => {});
+  }, [overrides]);
 
-  // Total bytes used by the app (×2: localStorage stores UTF-16 characters).
+  // Bytes used in localStorage (×2: it stores UTF-16 characters). With the
+  // photos out of here this should stay far from the ~5 MB quota.
   let totalBytes = 0;
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i)!;
@@ -367,27 +389,15 @@ function StorageManager() {
     return id; // photo of a stop that no longer exists — still frees space
   };
 
-  // Every data-URL photo stored on this phone, biggest first.
-  const photos: { id: string; name: string; bytes: number }[] = [];
-  for (const [id, p] of Object.entries(overrides.editedPois)) {
-    if (p.photo?.startsWith('data:')) photos.push({ id, name: poiName(id), bytes: p.photo.length * 2 });
-  }
-  for (const pois of Object.values(overrides.addedPois)) {
-    for (const p of pois) {
-      if (p.photo?.startsWith('data:') && !overrides.editedPois[p.id]?.photo) {
-        photos.push({ id: p.id, name: p.name, bytes: p.photo.length * 2 });
-      }
-    }
-  }
-  photos.sort((a, b) => b.bytes - a.bytes);
-
   const mb = (n: number) => (n / 1048576).toFixed(2);
   const kb = (n: number) => Math.max(1, Math.round(n / 1024));
+  const photoBytes = photos.reduce((s, p) => s + p.bytes, 0);
 
-  /** Removes one photo everywhere: strips it from the local copies AND stamps
-   *  the edit as "now", so the newest-wins sync deletes it from the server
-   *  and the other phones too (JSON drops `photo: undefined` on push). */
+  /** Removes one photo everywhere: deletes the blob, strips the marker AND
+   *  stamps the edit as "now", so the newest-wins sync deletes it from the
+   *  server and the other phones too (JSON drops `photo: undefined`). */
   const removePhoto = (id: string) => {
+    void deletePhoto(id);
     setOverrides((ov) => ({
       ...ov,
       editedPois: { ...ov.editedPois, [id]: { ...ov.editedPois[id], photo: undefined } },
@@ -399,6 +409,7 @@ function StorageManager() {
         ]),
       ),
     }));
+    setPhotos((list) => list.filter((p) => p.id !== id));
     saveJson('overridesUpdatedAt', Date.now());
     scheduleItineraryPush();
   };
@@ -419,15 +430,18 @@ function StorageManager() {
         <p className="text-xs text-stone-500 dark:text-stone-400">{t('storagePhotosNone')}</p>
       ) : (
         <>
+          <p className="text-xs text-stone-500 dark:text-stone-400">
+            📷 {t('storagePhotoSpace')}: {mb(photoBytes)} MB
+          </p>
           <p className="text-xs text-stone-500 dark:text-stone-400">{t('storageHint')}</p>
           {photos.map((p) => (
             <div key={p.id} className="flex items-center gap-2 text-sm py-0.5">
-              <span className="flex-1 min-w-0 truncate">{p.name}</span>
+              <span className="flex-1 min-w-0 truncate">{poiName(p.id)}</span>
               <span className="shrink-0 text-xs text-stone-500 dark:text-stone-400">
                 {kb(p.bytes)} KB
               </span>
               <button
-                onClick={() => confirm(`${t('removePhoto')} — ${p.name}?`) && removePhoto(p.id)}
+                onClick={() => confirm(`${t('removePhoto')} — ${poiName(p.id)}?`) && removePhoto(p.id)}
                 className="shrink-0 px-2 py-1 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-xs font-medium"
               >
                 🗑️ {t('removePhoto')}

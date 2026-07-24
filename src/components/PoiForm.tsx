@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Category, Poi } from '../types';
 import { usePersistentState } from '../lib/storage';
 import { fileToDataUrl } from '../lib/imageFile';
+import { usePhoto } from '../lib/photoStore';
 import { categoryIcon } from './PoiCard';
 import { useI18n, type TKey } from '../i18n';
 
@@ -27,6 +28,14 @@ interface Props {
   defaultCity: string;
   onSave: (poi: Omit<Poi, 'id'>) => void;
   onCancel: () => void;
+}
+
+/** Small helper so the hook that resolves stored photos only runs when a
+ *  photo is actually set. */
+function PhotoPreview({ refOrUrl }: { refOrUrl: string }) {
+  const url = usePhoto(refOrUrl);
+  if (!url) return null;
+  return <img src={url} alt="" className="w-full h-32 object-cover rounded-lg" />;
 }
 
 export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Props) {
@@ -156,12 +165,12 @@ export default function PoiForm({ initial, defaultCity, onSave, onCancel }: Prop
           <input className={input} value={form.mapsQuery} onChange={set('mapsQuery')} placeholder={`${form.name} ${form.city}`} />
         </label>
 
-        {/* Photo: preview + pick-from-phone + remove */}
+        {/* Photo: preview + pick-from-phone + remove. The preview resolves
+            "idb:" markers (stored photos) via usePhoto; a freshly picked
+            photo is a data-URL and passes straight through. */}
         <div className="text-sm space-y-2">
           {t('stopPhoto')}
-          {form.photo && (
-            <img src={form.photo} alt="" className="w-full h-32 object-cover rounded-lg" />
-          )}
+          {form.photo && <PhotoPreview refOrUrl={form.photo} />}
           <div className="flex gap-2">
             <button
               type="button"
