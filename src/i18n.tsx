@@ -232,6 +232,7 @@ const en = {
   chiPlanHint:
     'Suggested walking route with public transit and time estimates. Dinner is always around 8–9 PM. Tap Edit to adjust — changes sync to all three phones.',
   planOptional: 'Optional',
+  planStops: 'stops',
   planWalk: 'walk',
   planBus: 'bus',
   planCar: 'car',
@@ -459,6 +460,7 @@ const es: typeof en = {
   chiPlanHint:
     'Ruta sugerida a pie con transporte público y tiempos estimados. La cena es siempre sobre las 20–21 h. Toca Editar para ajustarlo — los cambios se sincronizan en los tres teléfonos.',
   planOptional: 'Opcional',
+  planStops: 'paradas',
   planWalk: 'a pie',
   planBus: 'bus',
   planCar: 'coche',

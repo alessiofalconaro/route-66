@@ -3,6 +3,7 @@
 // editable like the itinerary — edits are overrides that sync via /plan.
 import { useEffect, useState } from 'react';
 import { CHICAGO_PLAN, type PlanStep, type PlanTransit } from '../data/chicagoPlan';
+import { todayIso } from '../data/days';
 import { mergePlanSteps, usePlanOverrides } from '../lib/planOverrides';
 import { mapsUrl } from '../lib/maps';
 import { useI18n, type TKey } from '../i18n';
@@ -28,6 +29,15 @@ export default function ChicagoPlanView() {
   // Which step is open in the modal; { dayId, step: null } = adding a new one.
   const [modal, setModal] = useState<{ dayId: string; step: PlanStep | null } | null>(null);
 
+  // Days are collapsible. Default: today's day if we're in Chicago on one of
+  // the plan dates, otherwise the first day. Any number can be open at once.
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>(() => {
+    const today = todayIso();
+    const current = CHICAGO_PLAN.find((d) => d.iso === today);
+    return { [(current ?? CHICAGO_PLAN[0]).id]: true };
+  });
+  const toggleDay = (id: string) => setOpenDays((o) => ({ ...o, [id]: !o[id] }));
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -46,13 +56,40 @@ export default function ChicagoPlanView() {
 
       {CHICAGO_PLAN.map((day) => {
         const steps = mergePlanSteps(day, overrides);
+        const isOpen = openDays[day.id] ?? false;
+        const isToday = day.iso === todayIso();
         return (
           <section key={day.id} className="space-y-2">
-            <h2 className="font-bold text-base border-b border-stone-300 dark:border-stone-700 pb-1">
-              {day.title[lang]}
-            </h2>
+            {/* Header = the toggle. Collapsed days show a one-line summary. */}
+            <button
+              onClick={() => toggleDay(day.id)}
+              aria-expanded={isOpen}
+              className="w-full flex items-center gap-2 border-b border-stone-300 dark:border-stone-700 pb-1 text-left"
+            >
+              <span className="flex-1 min-w-0">
+                <span className="font-bold text-base">{day.title[lang]}</span>
+                {isToday && (
+                  <span className="ml-2 rounded-full bg-red-700 text-white text-[10px] font-bold px-2 py-0.5 align-middle">
+                    {t('todayLabel')}
+                  </span>
+                )}
+                {!isOpen && (
+                  <span className="block text-xs font-normal text-stone-500 dark:text-stone-400">
+                    {steps.length} {t('planStops')}
+                    {steps[0] ? ` · ${steps[0].time}–${steps[steps.length - 1].time}` : ''}
+                  </span>
+                )}
+              </span>
+              {/* chevron: rotates when the day is open */}
+              <span
+                className={`shrink-0 text-stone-400 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+              >
+                ›
+              </span>
+            </button>
 
-            {steps.map((s) => (
+            {isOpen &&
+              steps.map((s) => (
               <div key={s.id}>
                 {/* Transit connector: how to get here from the previous stop */}
                 {s.transit && (
@@ -117,9 +154,9 @@ export default function ChicagoPlanView() {
                   )}
                 </div>
               </div>
-            ))}
+              ))}
 
-            {editing && (
+            {isOpen && editing && (
               <button
                 onClick={() => setModal({ dayId: day.id, step: null })}
                 className="w-full rounded-xl border-2 border-dashed border-stone-300 dark:border-stone-600 py-2.5 text-sm font-medium text-stone-600 dark:text-stone-300"

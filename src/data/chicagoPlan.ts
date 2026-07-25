@@ -31,6 +31,7 @@ export interface PlanStep {
 export interface PlanDay {
   id: string;
   date: string; // "Aug 3"
+  iso: string; // "2026-08-03" — lets the view auto-open the current day
   title: LText;
   steps: PlanStep[];
 }
@@ -42,6 +43,7 @@ export const CHICAGO_PLAN: PlanDay[] = [
   {
     id: 'aug3',
     date: 'Aug 3',
+    iso: '2026-08-03',
     title: lt('Mon Aug 3 · afternoon & evening', 'Lun 3 ago · tarde y noche'),
     steps: [
       {
@@ -119,6 +121,7 @@ export const CHICAGO_PLAN: PlanDay[] = [
   {
     id: 'aug4',
     date: 'Aug 4',
+    iso: '2026-08-04',
     title: lt('Tue Aug 4 · full day', 'Mar 4 ago · día completo'),
     steps: [
       {
@@ -249,6 +252,7 @@ export const CHICAGO_PLAN: PlanDay[] = [
   {
     id: 'aug5',
     date: 'Aug 5',
+    iso: '2026-08-05',
     title: lt('Wed Aug 5 · car + hit the road', 'Mié 5 ago · coche + carretera'),
     steps: [
       {
