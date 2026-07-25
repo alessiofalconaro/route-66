@@ -4,6 +4,7 @@ import { DAYS, TRIP_START, TRIP_END, todayIso, TOTAL_MILES, milesDoneBy } from '
 import type { DayEntry } from '../data/days';
 import { CITIES, hotelById, segmentById } from '../data/tripData';
 import { planDayByIso } from '../data/plan';
+import { fmtDistance, milesToKm } from '../lib/units';
 import type { Router } from '../lib/router';
 import { useI18n, type TKey } from '../i18n';
 
@@ -48,7 +49,7 @@ export default function TripView({ router }: { router: Router }) {
     if (kindKey) parts.push(t(kindKey));
     if (d.mode === 'leg') {
       const seg = segmentById(d.id);
-      if (seg?.distanceMiles) parts.push(`~${seg.distanceMiles} ${t('miles')}`);
+      if (seg?.distanceMiles) parts.push(`~${fmtDistance(seg.distanceMiles)}`);
       const hotel = hotelById(seg?.hotelId);
       if (hotel) parts.push(`🌙 ${hotel.name}`);
     }
@@ -71,6 +72,9 @@ export default function TripView({ router }: { router: Router }) {
               <p className="font-bold">{t('tripProgress')}</p>
               <p className="text-sm">
                 {done.toLocaleString(locale)} / {TOTAL_MILES.toLocaleString(locale)} {t('miles')}
+                {' · '}
+                {Math.round(milesToKm(done)).toLocaleString(locale)} /{' '}
+                {Math.round(milesToKm(TOTAL_MILES)).toLocaleString(locale)} km
               </p>
             </div>
             {/* progress bar with a dot per overnight city */}

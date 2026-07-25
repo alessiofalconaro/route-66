@@ -88,8 +88,8 @@ export const SOUTHWEST_DAYS: PlanDay[] = [
         time: '22:00',
         name: 'Early night — 06:00 alarm tomorrow',
         note: lt(
-          'Tomorrow is ~500 mi with Four Corners, Monument Valley and Horseshoe Bend. It only works if you leave at 06:00.',
-          'Mañana son ~500 millas con Four Corners, Monument Valley y Horseshoe Bend. Solo sale bien saliendo a las 06:00.',
+          'Tomorrow is ~500 mi / 805 km with Four Corners, Monument Valley and Horseshoe Bend. It only works if you leave at 06:00.',
+          'Mañana son ~500 millas / 805 km con Four Corners, Monument Valley y Horseshoe Bend. Solo sale bien saliendo a las 06:00.',
         ),
       },
     ],
@@ -101,15 +101,15 @@ export const SOUTHWEST_DAYS: PlanDay[] = [
     segmentIds: ['albuquerque-grandcanyon'],
     cityIds: ['albuquerque', 'grand-canyon'],
     tz: 'America/Denver',
-    title: lt('Tue Aug 11 · THE BIG ONE — 500 mi to the Grand Canyon', 'Mar 11 ago · EL DÍA GRANDE — 500 millas al Gran Cañón'),
+    title: lt('Tue Aug 11 · THE BIG ONE — 500 mi / 805 km to the Grand Canyon', 'Mar 11 ago · EL DÍA GRANDE — 500 millas / 805 km al Gran Cañón'),
     steps: [
       {
         id: 'a11-depart',
         time: '06:00',
         name: 'Earliest start of the trip',
         note: lt(
-          '~500 mi and 9-10 h of driving with the stops. Leave at 06:00 or you will reach the Canyon after dark. Fill the tank tonight, not tomorrow.',
-          '~500 millas y 9-10 h conduciendo con las paradas. Salid a las 06:00 o llegaréis al Cañón de noche. Llenad el depósito esta noche, no mañana.',
+          '~500 mi / 805 km and 9-10 h of driving with the stops. Leave at 06:00 or you will reach the Canyon after dark. Fill the tank tonight, not tomorrow.',
+          '~500 millas / 805 km y 9-10 h conduciendo con las paradas. Salid a las 06:00 o llegaréis al Cañón de noche. Llenad el depósito esta noche, no mañana.',
         ),
       },
       {

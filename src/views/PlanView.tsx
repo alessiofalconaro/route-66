@@ -8,6 +8,8 @@ import { todayIso } from '../data/days';
 import { mergePlanSteps, usePlanOverrides } from '../lib/planOverrides';
 import { useSessionState } from '../lib/storage';
 import { mapsUrl } from '../lib/maps';
+import { fmtDuration } from '../lib/units';
+import { planStepPhoto } from '../data/plan/stepPhotos';
 import { useI18n, type TKey } from '../i18n';
 
 const TRANSIT_ICON: Record<PlanTransit['mode'], string> = {
@@ -132,7 +134,7 @@ export default function PlanView({ focus }: { focus?: string }) {
                 {/* Transit connector: how to get here from the previous stop */}
                 {s.transit && (
                   <p className="pl-5 pb-1 text-xs text-stone-500 dark:text-stone-400">
-                    {TRANSIT_ICON[s.transit.mode]} {s.transit.minutes} {t('minutes')} ·{' '}
+                    {TRANSIT_ICON[s.transit.mode]} {fmtDuration(s.transit.minutes, t('minutes'))} ·{' '}
                     {t(TRANSIT_LABEL[s.transit.mode])}
                     {s.transit.detail ? ` — ${s.transit.detail[lang]}` : ''}
                   </p>
@@ -143,10 +145,20 @@ export default function PlanView({ focus }: { focus?: string }) {
                     <span className="shrink-0 rounded-lg bg-red-700 text-white text-xs font-bold px-2 py-1">
                       {s.time}
                     </span>
+                    {/* Thumbnail of the same place from the itinerary photos,
+                        so you can see at a glance what the stop looks like */}
+                    {planStepPhoto(s.mapsQuery) && (
+                      <img
+                        src={planStepPhoto(s.mapsQuery)}
+                        alt=""
+                        loading="lazy"
+                        className="w-14 h-14 rounded-lg object-cover shrink-0"
+                      />
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm leading-tight">{s.name}</p>
                       <p className="text-xs text-stone-500 dark:text-stone-400">
-                        {s.durationMin ? `~${s.durationMin} ${t('minutes')}` : ''}
+                        {s.durationMin ? `~${fmtDuration(s.durationMin, t('minutes'))}` : ''}
                         {s.optional && (
                           <span className="ml-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 px-2 py-0.5 font-medium">
                             {t('planOptional')}

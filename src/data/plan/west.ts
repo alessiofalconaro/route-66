@@ -18,8 +18,8 @@ export const WEST_DAYS: PlanDay[] = [
         time: '09:00',
         name: 'Leave the hotel with the bags',
         note: lt(
-          'Only 165 mi today — the shortest drive of the trip, and it ends on the Strip.',
-          'Solo 165 millas hoy — el trayecto más corto del viaje, y acaba en el Strip.',
+          'Only 165 mi / 266 km today — the shortest drive of the trip, and it ends on the Strip.',
+          'Solo 165 millas / 266 km hoy — el trayecto más corto del viaje, y acaba en el Strip.',
         ),
       },
       {
@@ -39,7 +39,7 @@ export const WEST_DAYS: PlanDay[] = [
         time: '10:15',
         name: 'Virgin River Gorge (I-15)',
         note: lt(
-          'No stop needed — just look up. A 20 mi canyon the interstate carves straight through; it was the most expensive stretch of rural highway ever built in the US.',
+          'No stop needed — just look up. A 20 mi / 32 km canyon the interstate carves straight through; it was the most expensive stretch of rural highway ever built in the US.',
           'No hace falta parar — solo mirad. Un cañón de 32 km que la interestatal atraviesa; fue el tramo de autopista rural más caro jamás construido en EE. UU.',
         ),
       },
@@ -167,7 +167,7 @@ export const WEST_DAYS: PlanDay[] = [
       {
         id: 'a15-depart',
         time: '07:30',
-        name: 'Early start — 325 mi across the Mojave',
+        name: 'Early start — 325 mi / 523 km across the Mojave',
         note: lt(
           'Crossing the desert before the afternoon heat matters: this stretch regularly hits 45 °C. Carry more water than you think you need.',
           'Cruzar el desierto antes del calor de la tarde importa: este tramo llega a 45 °C con frecuencia. Llevad más agua de la que creéis necesitar.',
@@ -273,7 +273,7 @@ export const WEST_DAYS: PlanDay[] = [
         time: '07:30',
         name: 'Early start for Sequoia',
         note: lt(
-          'The road up is 20 mi of switchbacks — slow, beautiful, and much better before the day-trippers arrive.',
+          'The road up is 20 mi / 32 km of switchbacks — slow, beautiful, and much better before the day-trippers arrive.',
           'La subida son 32 km de curvas — lenta, preciosa y mucho mejor antes de que lleguen los excursionistas.',
         ),
       },
@@ -361,8 +361,8 @@ export const WEST_DAYS: PlanDay[] = [
         name: 'Arrival dinner — you made it',
         durationMin: 120,
         note: lt(
-          'Chicago to Los Angeles, 2400+ miles, 14 days. Somewhere on Ocean Ave with the pier lit up behind you.',
-          'De Chicago a Los Ángeles, más de 2400 millas, 14 días. En algún sitio de Ocean Ave con el muelle iluminado detrás.',
+          'Chicago to Los Angeles, 2400+ miles / 3860+ km, 14 days. Somewhere on Ocean Ave with the pier lit up behind you.',
+          'De Chicago a Los Ángeles, más de 2400 millas / 3862 km, 14 días. En algún sitio de Ocean Ave con el muelle iluminado detrás.',
         ),
       },
     ],

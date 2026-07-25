@@ -1,5 +1,6 @@
 import type { Poi, Category } from '../types';
 import { mapsUrl } from '../lib/maps';
+import { fmtDuration } from '../lib/units';
 import { PHOTOS } from '../data/photos';
 import { usePhoto } from '../lib/photoStore';
 import { useI18n } from '../i18n';
@@ -104,7 +105,7 @@ export default function PoiCard({
         </div>
         <p className="text-xs text-stone-500 dark:text-stone-400">
           {poi.city}
-          {poi.dwellMinutes ? ` · ${poi.dwellMinutes} ${t('minutes')}` : ''}
+          {poi.dwellMinutes ? ` · ${fmtDuration(poi.dwellMinutes, t('minutes'))}` : ''}
         </p>
         {poi.note && <p className="text-xs text-stone-600 dark:text-stone-300 mt-1">{poi.note}</p>}
 

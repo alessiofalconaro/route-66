@@ -4,6 +4,7 @@
 import { CITY_INFO } from '../data/cityInfo';
 import { CITY_POINTS } from '../lib/geo';
 import { fmtTime, sunTimes } from '../lib/sun';
+import { fmtSpeed } from '../lib/units';
 import { useI18n } from '../i18n';
 
 export default function LocalInfoCard({ cityId }: { cityId: string }) {
@@ -34,7 +35,7 @@ export default function LocalInfoCard({ cityId }: { cityId: string }) {
       <p className={row}>
         <span>🚗 {t('speedLimitLabel')}</span>
         <span className="font-medium">
-          {info.speedLimitMph} mph · {info.state}
+          {fmtSpeed(info.speedLimitMph)} · {info.state}
         </span>
       </p>
     </div>

@@ -297,8 +297,8 @@ export const LA_DAYS: PlanDay[] = [
         name: 'LAX terminal',
         transit: { mode: 'bus', minutes: 20, detail: lt('free rental-center shuttle', 'lanzadera gratuita del centro de alquiler') },
         note: lt(
-          'Be at the terminal 3 h before an international flight. 2400 miles, 4 NBA arenas, 8 states. Done.',
-          'Estad en la terminal 3 h antes de un vuelo internacional. 2400 millas, 4 estadios NBA, 8 estados. Hecho.',
+          'Be at the terminal 3 h before an international flight. 2400 miles / 3860 km, 4 NBA arenas, 8 states. Done.',
+          'Estad en la terminal 3 h antes de un vuelo internacional. 2400 millas / 3862 km, 4 estadios NBA, 8 estados. Hecho.',
         ),
         mapsQuery: 'Los Angeles International Airport',
       },

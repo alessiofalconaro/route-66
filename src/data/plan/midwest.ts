@@ -21,8 +21,8 @@ export const MIDWEST_DAYS: PlanDay[] = [
         time: '08:30',
         name: 'Leave the hotel with the bags',
         note: lt(
-          '230 mi today — a calm day, but the Arch museum deserves real time.',
-          '230 millas hoy — día tranquilo, pero el museo del Arch merece tiempo de verdad.',
+          '230 mi / 370 km today — a calm day, but the Arch museum deserves real time.',
+          '230 millas / 370 km hoy — día tranquilo, pero el museo del Arch merece tiempo de verdad.',
         ),
       },
       {
@@ -135,8 +135,8 @@ export const MIDWEST_DAYS: PlanDay[] = [
         time: '09:00',
         name: 'Leave the hotel with the bags',
         note: lt(
-          'Shortest driving day of the trip (190 mi) — you can sleep in.',
-          'El día de conducción más corto del viaje (190 millas) — podéis dormir un poco más.',
+          'Shortest driving day of the trip (190 mi / 306 km) — you can sleep in.',
+          'El día de conducción más corto del viaje (190 millas / 306 km) — podéis dormir un poco más.',
         ),
       },
       {
@@ -182,7 +182,7 @@ export const MIDWEST_DAYS: PlanDay[] = [
         durationMin: 20,
         transit: { mode: 'car', minutes: 15 },
         note: lt(
-          'The 1951 tow truck that inspired Tow Mater in Pixar\'s "Cars". Kansas holds only 13 mi of Route 66 — this is the highlight.',
+          'The 1951 tow truck that inspired Tow Mater in Pixar\'s "Cars". Kansas holds only 13 mi / 21 km of Route 66 — this is the highlight.',
           'La grúa de 1951 que inspiró a Mate en "Cars" de Pixar. Kansas solo tiene 21 km de Route 66 — esto es lo mejor.',
         ),
         mapsQuery: 'Cars on the Route Galena KS',
@@ -257,7 +257,7 @@ export const MIDWEST_DAYS: PlanDay[] = [
       {
         id: 'a8-depart',
         time: '07:00',
-        name: 'Early start — 370 mi ahead',
+        name: 'Early start — 370 mi / 595 km ahead',
         note: lt(
           'The second-longest day of the trip, and it ends with dinner at the Big Texan. Leave early.',
           'El segundo día más largo del viaje, y acaba con cena en el Big Texan. Salid pronto.',
@@ -414,8 +414,8 @@ export const MIDWEST_DAYS: PlanDay[] = [
         durationMin: 30,
         transit: { mode: 'car', minutes: 80 },
         note: lt(
-          '1139 miles to Chicago, 1139 to Los Angeles — the exact halfway mark, with the sign painted on the road.',
-          '1139 millas a Chicago, 1139 a Los Ángeles — la mitad exacta, con el cartel pintado en la carretera.',
+          '1139 miles / 1833 km to Chicago, the same to Los Angeles — the exact halfway mark, with the sign painted on the road.',
+          '1139 millas / 1833 km a Chicago, lo mismo a Los Ángeles — la mitad exacta, con el cartel pintado en la carretera.',
         ),
         mapsQuery: 'Route 66 Midpoint Adrian Texas',
       },

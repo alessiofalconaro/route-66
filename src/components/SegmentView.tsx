@@ -5,6 +5,7 @@ import { useState } from 'react';
 import type { Poi, Segment } from '../types';
 import { CAR_RENTAL, hotelById } from '../data/tripData';
 import { mapsUrl } from '../lib/maps';
+import { fmtDistance } from '../lib/units';
 import { mergePois, useOverrides } from '../lib/overrides';
 import { photoRef, putPhoto } from '../lib/photoStore';
 import { useVisited } from '../lib/visited';
@@ -35,7 +36,7 @@ export default function SegmentView({ segment }: { segment: Segment }) {
           <h2 className="text-lg font-bold leading-tight">{segment.label}</h2>
           <p className="text-xs text-stone-500 dark:text-stone-400">
             {segment.dates}
-            {segment.distanceMiles ? ` · ~${segment.distanceMiles} ${t('miles')}` : ''}
+            {segment.distanceMiles ? ` · ~${fmtDistance(segment.distanceMiles)}` : ''}
             {segment.driveHours ? ` · ~${segment.driveHours} ${t('hoursShort')}` : ''}
           </p>
         </div>
