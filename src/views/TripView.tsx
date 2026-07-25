@@ -3,6 +3,7 @@
 import { DAYS, TRIP_START, TRIP_END, todayIso, TOTAL_MILES, milesDoneBy } from '../data/days';
 import type { DayEntry } from '../data/days';
 import { CITIES, hotelById, segmentById } from '../data/tripData';
+import { planDayByIso } from '../data/plan';
 import type { Router } from '../lib/router';
 import { useI18n, type TKey } from '../i18n';
 
@@ -92,15 +93,18 @@ export default function TripView({ router }: { router: Router }) {
         const isToday = d.date === today;
         const isPast = d.date < today;
         return (
-          <button
+          <div
             key={d.date}
-            onClick={() => router.navigate(`home/${d.mode}/${d.id}`)}
-            className={`w-full text-left rounded-xl p-3 shadow-sm flex items-center gap-3 ${
+            className={`w-full rounded-xl p-3 shadow-sm flex items-center gap-3 ${
               isToday
                 ? 'bg-red-700 text-white'
                 : 'bg-white dark:bg-stone-900' + (isPast ? ' opacity-60' : '')
             }`}
           >
+            <button
+              onClick={() => router.navigate(`home/${d.mode}/${d.id}`)}
+              className="flex-1 min-w-0 flex items-center gap-3 text-left"
+            >
             {/* day number bubble */}
             <div
               className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-bold text-sm ${
@@ -133,7 +137,20 @@ export default function TripView({ router }: { router: Router }) {
               )}
             </div>
             <span className={isToday ? 'text-red-100' : 'text-stone-400'}>›</span>
-          </button>
+            </button>
+            {/* shortcut straight into that day's timed plan */}
+            {planDayByIso(d.date) && (
+              <button
+                onClick={() => router.navigate(`more/plan/${planDayByIso(d.date)!.id}`)}
+                aria-label={t('planTitle')}
+                className={`shrink-0 rounded-lg px-2.5 py-1.5 text-sm ${
+                  isToday ? 'bg-red-800 text-white' : 'bg-stone-100 dark:bg-stone-800'
+                }`}
+              >
+                🗺️
+              </button>
+            )}
+          </div>
         );
       })}
     </div>

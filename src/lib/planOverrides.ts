@@ -1,9 +1,12 @@
-// Merge layer for the Chicago plan: bundled CHICAGO_PLAN (read-only) + the
+// Merge layer for the day-by-day plans: bundled TRIP_PLAN (read-only) + the
 // user's localStorage overrides = the plan actually shown. Same philosophy
 // as lib/overrides.ts for the itinerary — editing NEVER touches the data file.
+//
+// NOTE: removedStepIds/editedSteps are keyed by BARE step id across all days,
+// so step ids must be globally unique (see the warning in data/plan/types.ts).
 
 import { useCallback } from 'react';
-import type { PlanDay, PlanStep } from '../data/chicagoPlan';
+import type { PlanDay, PlanStep } from '../data/plan/types';
 import { saveJson, usePersistentState } from './storage';
 import { schedulePlanPush } from './planSync';
 
@@ -37,11 +40,25 @@ export function mergePlanSteps(day: PlanDay, ov: PlanOverrides): PlanStep[] {
   steps = [...steps, ...added.map((s) => (ov.editedSteps[s.id] ? { ...s, ...ov.editedSteps[s.id] } : s))];
   const order = ov.stepOrder[day.id];
   if (order) {
-    steps.sort((a, b) => {
-      const ia = order.indexOf(a.id);
-      const ib = order.indexOf(b.id);
-      return (ia === -1 ? Number.MAX_SAFE_INTEGER : ia) - (ib === -1 ? Number.MAX_SAFE_INTEGER : ib);
-    });
+    // Steps missing from a saved order (e.g. added to the bundled data after
+    // the user reordered that day) keep their neighbour's position instead of
+    // being dumped at the end: each unknown id inherits the rank of the last
+    // known one, plus a small increment.
+    const rank = new Map<string, number>();
+    let last = -1;
+    let gap = 0;
+    for (const s of steps) {
+      const i = order.indexOf(s.id);
+      if (i === -1) {
+        gap += 1;
+        rank.set(s.id, last + gap / 1000);
+      } else {
+        last = i;
+        gap = 0;
+        rank.set(s.id, i);
+      }
+    }
+    steps.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
   }
   return steps;
 }
@@ -104,5 +121,37 @@ export function usePlanOverrides() {
     touchAndSync();
   }, [setOverrides]);
 
-  return { overrides, removeStep, editStep, addStep, moveStep, resetPlan };
+  /**
+   * Restores ONE day to the bundled plan, leaving every other day's edits
+   * alone. The day object carries the ids we need to filter the global
+   * removed/edited maps. It still stamps planResetAt, because that is what
+   * makes the other phones adopt this snapshot wholesale instead of merging
+   * the deleted entries back in — the pushed snapshot keeps all other days.
+   */
+  const resetDay = useCallback(
+    (day: PlanDay) => {
+      setOverrides((ov) => {
+        const ids = new Set<string>([
+          ...day.steps.map((s) => s.id),
+          ...(ov.addedSteps[day.id] ?? []).map((s) => s.id),
+        ]);
+        const editedSteps = Object.fromEntries(
+          Object.entries(ov.editedSteps).filter(([id]) => !ids.has(id)),
+        );
+        const { [day.id]: _added, ...addedSteps } = ov.addedSteps;
+        const { [day.id]: _order, ...stepOrder } = ov.stepOrder;
+        return {
+          removedStepIds: ov.removedStepIds.filter((id) => !ids.has(id)),
+          editedSteps,
+          addedSteps,
+          stepOrder,
+        };
+      });
+      saveJson('planResetAt', Date.now());
+      touchAndSync();
+    },
+    [setOverrides],
+  );
+
+  return { overrides, removeStep, editStep, addStep, moveStep, resetPlan, resetDay };
 }

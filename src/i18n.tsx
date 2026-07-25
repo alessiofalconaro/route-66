@@ -228,9 +228,13 @@ const en = {
   nbaBadge: 'NBA',
   nbaOffseason: 'August = NBA offseason. Verify hours & jersey stock before going.',
   // Chicago day-by-day plan
-  chiPlanTitle: 'Chicago plan (Aug 3–5)',
-  chiPlanHint:
-    'Suggested walking route with public transit and time estimates. Dinner is always around 8–9 PM. Tap Edit to adjust — changes sync to all three phones.',
+  planTitle: 'Day-by-day plan',
+  planDayCard: 'Plan for this day',
+  planAllDays: 'All 17 days',
+  planResetDayBtn: 'Reset this day',
+  planResetDayConfirm: 'Restore the original plan for this day only?',
+  planHint:
+    'A suggested schedule for every day, with travel times between stops. Times are local and are estimates — meal stops have no venue on purpose. Tap Edit to adjust: changes sync to all three phones.',
   planOptional: 'Optional',
   planStops: 'stops',
   planWalk: 'walk',
@@ -456,9 +460,13 @@ const es: typeof en = {
   firstRunHint: 'Solo se usa para el saludo — puedes cambiarlo en Ajustes.',
   nbaBadge: 'NBA',
   nbaOffseason: 'Agosto = temporada baja NBA. Verifica horarios y stock de camisetas antes de ir.',
-  chiPlanTitle: 'Plan de Chicago (3–5 ago)',
-  chiPlanHint:
-    'Ruta sugerida a pie con transporte público y tiempos estimados. La cena es siempre sobre las 20–21 h. Toca Editar para ajustarlo — los cambios se sincronizan en los tres teléfonos.',
+  planTitle: 'Plan día a día',
+  planDayCard: 'Plan de este día',
+  planAllDays: 'Los 17 días',
+  planResetDayBtn: 'Restablecer este día',
+  planResetDayConfirm: '¿Restaurar el plan original solo de este día?',
+  planHint:
+    'Un horario sugerido para cada día, con los tiempos de trayecto entre paradas. Las horas son locales y aproximadas — las comidas no llevan sitio a propósito. Toca Editar para ajustarlo: los cambios se sincronizan en los tres teléfonos.',
   planOptional: 'Opcional',
   planStops: 'paradas',
   planWalk: 'a pie',

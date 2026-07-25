@@ -9,6 +9,7 @@ import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
 import HotelCard from './HotelCard';
 import LocalInfoCard from './LocalInfoCard';
+import PlanShortcutCard from './PlanShortcutCard';
 import SegmentView from './SegmentView';
 
 export default function CityView({ cityId }: { cityId: string }) {
@@ -24,14 +25,6 @@ export default function CityView({ cityId }: { cityId: string }) {
       <div className="space-y-3">
         <LocalInfoCard cityId={cityId} />
         {/* Chicago has a full timed walking plan — shortcut to it */}
-        {cityId === 'chicago' && (
-          <a
-            href="#/more/plan"
-            className="block rounded-xl bg-red-700 text-white shadow-sm p-3 text-sm font-medium"
-          >
-            🗺️ {t('chiPlanTitle')} →
-          </a>
-        )}
         <SegmentView segment={dedicated} />
       </div>
     );
@@ -54,6 +47,7 @@ export default function CityView({ cityId }: { cityId: string }) {
         <p className="text-xs text-stone-500 dark:text-stone-400">{hotel.nights}</p>
       </div>
       <LocalInfoCard cityId={cityId} />
+      <PlanShortcutCard cityId={cityId} />
       <HotelCard hotel={hotel} />
       {pois.length === 0 ? (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('emptyCityHint')}</p>

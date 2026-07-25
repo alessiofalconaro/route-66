@@ -1,10 +1,12 @@
-// Chicago day-by-day plan (Aug 3–5): a timed walking route through all the
-// city stops, with transit times between them. Fully offline (bundled data);
+// Day-by-day plans for the whole trip: a timed route through each day's
+// stops, with travel times between them. Fully offline (bundled data);
 // editable like the itinerary — edits are overrides that sync via /plan.
-import { useEffect, useState } from 'react';
-import { CHICAGO_PLAN, type PlanStep, type PlanTransit } from '../data/chicagoPlan';
+// `focus` narrows the view to one day / segment / city (see resolvePlanFocus).
+import { useEffect, useMemo, useState } from 'react';
+import { resolvePlanFocus, type PlanStep, type PlanTransit } from '../data/plan';
 import { todayIso } from '../data/days';
 import { mergePlanSteps, usePlanOverrides } from '../lib/planOverrides';
+import { useSessionState } from '../lib/storage';
 import { mapsUrl } from '../lib/maps';
 import { useI18n, type TKey } from '../i18n';
 
@@ -22,26 +24,33 @@ const TRANSIT_LABEL: Record<PlanTransit['mode'], TKey> = {
   taxi: 'planTaxi',
 };
 
-export default function ChicagoPlanView() {
+export default function PlanView({ focus }: { focus?: string }) {
   const { t, lang } = useI18n();
-  const { overrides, removeStep, editStep, addStep, moveStep, resetPlan } = usePlanOverrides();
+  const { overrides, removeStep, editStep, addStep, moveStep, resetPlan, resetDay } =
+    usePlanOverrides();
+  const { days, focused } = useMemo(() => resolvePlanFocus(focus), [focus]);
   const [editing, setEditing] = useState(false);
   // Which step is open in the modal; { dayId, step: null } = adding a new one.
   const [modal, setModal] = useState<{ dayId: string; step: PlanStep | null } | null>(null);
 
-  // Days are collapsible. Default: today's day if we're in Chicago on one of
-  // the plan dates, otherwise the first day. Any number can be open at once.
-  const [openDays, setOpenDays] = useState<Record<string, boolean>>(() => {
-    const today = todayIso();
-    const current = CHICAGO_PLAN.find((d) => d.iso === today);
-    return { [(current ?? CHICAGO_PLAN[0]).id]: true };
-  });
+  // Days are collapsible. Default: today if the trip is running, else the
+  // next day still to come, else the first one. Any number can be open at
+  // once. Kept in sessionStorage so a background sync (which remounts the
+  // views) doesn't collapse everything under the user's fingers.
+  const [openDays, setOpenDays] = useSessionState<Record<string, boolean>>(
+    `planOpen:${focus ?? 'all'}`,
+    (() => {
+      const today = todayIso();
+      const current = days.find((d) => d.iso === today) ?? days.find((d) => d.iso >= today);
+      return { [(current ?? days[0]).id]: true };
+    })(),
+  );
   const toggleDay = (id: string) => setOpenDays((o) => ({ ...o, [id]: !o[id] }));
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <h1 className="flex-1 text-xl font-bold">🗺️ {t('chiPlanTitle')}</h1>
+        <h1 className="flex-1 text-xl font-bold">🗺️ {t('planTitle')}</h1>
         <button
           onClick={() => setEditing((e) => !e)}
           className={`text-sm font-medium rounded-lg px-3 py-1.5 ${
@@ -52,14 +61,43 @@ export default function ChicagoPlanView() {
         </button>
       </div>
 
-      <p className="text-xs text-stone-500 dark:text-stone-400">{t('chiPlanHint')}</p>
+      <p className="text-xs text-stone-500 dark:text-stone-400">{t('planHint')}</p>
 
-      {CHICAGO_PLAN.map((day) => {
+      {/* Focused view (one segment/city): offer the way back to all 17 days */}
+      {focused && (
+        <a href="#/more/plan" className="inline-block text-sm font-medium text-red-700 dark:text-red-400">
+          ← {t('planAllDays')}
+        </a>
+      )}
+
+      {/* Date chips: jump to any day and open it (only in the full index) */}
+      {!focused && days.length > 3 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
+          {days.map((day) => (
+            <button
+              key={day.id}
+              onClick={() => {
+                setOpenDays((o) => ({ ...o, [day.id]: true }));
+                document.getElementById(`plan-${day.id}`)?.scrollIntoView({ block: 'start' });
+              }}
+              className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
+                day.iso === todayIso()
+                  ? 'bg-red-700 text-white'
+                  : 'bg-stone-200 dark:bg-stone-700'
+              }`}
+            >
+              {day.date.replace('Aug ', '')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {days.map((day) => {
         const steps = mergePlanSteps(day, overrides);
         const isOpen = openDays[day.id] ?? false;
         const isToday = day.iso === todayIso();
         return (
-          <section key={day.id} className="space-y-2">
+          <section key={day.id} id={`plan-${day.id}`} className="space-y-2 scroll-mt-2">
             {/* Header = the toggle. Collapsed days show a one-line summary. */}
             <button
               onClick={() => toggleDay(day.id)}
@@ -164,11 +202,20 @@ export default function ChicagoPlanView() {
                 ＋ {t('addStop')}
               </button>
             )}
+
+            {isOpen && editing && (
+              <button
+                onClick={() => confirm(`${t('planResetDayConfirm')} — ${day.date}`) && resetDay(day)}
+                className="w-full rounded-xl bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 py-2 text-xs font-medium"
+              >
+                ♻️ {t('planResetDayBtn')}
+              </button>
+            )}
           </section>
         );
       })}
 
-      {editing && (
+      {editing && !focused && (
         <button
           onClick={() => confirm(t('planResetConfirm')) && resetPlan()}
           className="w-full rounded-xl bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 py-2.5 text-sm font-medium"

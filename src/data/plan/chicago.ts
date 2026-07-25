@@ -1,47 +1,15 @@
-// Chicago day-by-day walking plan (Aug 3–5), designed around the group's
-// constraints: arrival ~15:00 on Aug 3, river cruise booked ~10:00 on Aug 4,
-// car pickup the morning of Aug 5 with United Center on the way out of town.
-// Like tripData, this file is read-only: user edits live in localStorage
-// overrides (lib/planOverrides.ts) and sync across the phones via /plan.
+// Chicago days (Aug 3-5). Built around the group's constraints: arrival
+// ~15:00 on Aug 3, river cruise booked ~10:00 on Aug 4, car pickup the morning
+// of Aug 5 with United Center on the way out of town — then Day 1 of the drive.
+// Read-only: user edits live in localStorage overrides (lib/planOverrides.ts).
+import { lt, type PlanDay } from './types';
 
-// Localized text: the app UI is EN/ES, so plan notes carry both languages.
-// Proper nouns (place names) stay in English, per the project i18n rule.
-export interface LText {
-  en: string;
-  es: string;
-}
-
-export interface PlanTransit {
-  mode: 'walk' | 'bus' | 'car' | 'taxi';
-  minutes: number;
-  detail?: LText; // e.g. "bus 151 from Michigan Ave"
-}
-
-export interface PlanStep {
-  id: string;
-  time: string; // "15:00" — suggested start time, not a hard booking
-  name: string; // proper noun, stays in English
-  durationMin?: number;
-  optional?: boolean; // "only if we pass nearby" stops (Starbucks, Nutella)
-  transit?: PlanTransit; // how to get HERE from the previous step
-  note?: LText;
-  mapsQuery?: string; // used with mapsUrl(); coordinates for ambiguous pins
-}
-
-export interface PlanDay {
-  id: string;
-  date: string; // "Aug 3"
-  iso: string; // "2026-08-03" — lets the view auto-open the current day
-  title: LText;
-  steps: PlanStep[];
-}
-
-// Small helper to keep the literals below short.
-const lt = (en: string, es: string): LText => ({ en, es });
-
-export const CHICAGO_PLAN: PlanDay[] = [
+export const CHICAGO_DAYS: PlanDay[] = [
   {
     id: 'aug3',
+    segmentIds: ['chicago'],
+    cityIds: ['chicago'],
+    tz: 'America/Chicago',
     date: 'Aug 3',
     iso: '2026-08-03',
     title: lt('Mon Aug 3 · afternoon & evening', 'Lun 3 ago · tarde y noche'),
@@ -120,6 +88,9 @@ export const CHICAGO_PLAN: PlanDay[] = [
   },
   {
     id: 'aug4',
+    segmentIds: ['chicago'],
+    cityIds: ['chicago'],
+    tz: 'America/Chicago',
     date: 'Aug 4',
     iso: '2026-08-04',
     title: lt('Tue Aug 4 · full day', 'Mar 4 ago · día completo'),
@@ -251,6 +222,9 @@ export const CHICAGO_PLAN: PlanDay[] = [
   },
   {
     id: 'aug5',
+    segmentIds: ['chicago', 'chicago-stlouis'],
+    cityIds: ['chicago', 'stlouis'],
+    tz: 'America/Chicago',
     date: 'Aug 5',
     iso: '2026-08-05',
     title: lt('Wed Aug 5 · car + hit the road', 'Mié 5 ago · coche + carretera'),
@@ -292,10 +266,100 @@ export const CHICAGO_PLAN: PlanDay[] = [
         name: 'Hit the road — I-55 South to St. Louis',
         note: lt('Day 1 of the road trip begins!', '¡Empieza el día 1 del road trip!'),
       },
+      {
+        id: 'a5-joliet',
+        time: '11:30',
+        name: 'Joliet — Route 66 Park & Rich & Creamy',
+        durationMin: 20,
+        transit: { mode: 'car', minutes: 45 },
+        note: lt(
+          'First stop out of the city: the Route 66 mural wall and the Blues Brothers figures on the ice-cream stand roof.',
+          'Primera parada al salir: el mural de la Route 66 y las figuras de los Blues Brothers en el techo de la heladería.',
+        ),
+        mapsQuery: 'Route 66 Park Joliet IL',
+      },
+      {
+        id: 'a5-dwight',
+        time: '12:35',
+        name: "Ambler's Texaco Gas Station, Dwight",
+        durationMin: 20,
+        transit: { mode: 'car', minutes: 45 },
+        note: lt(
+          'The longest-operating gas station on Route 66 (1933–1999) — restored, free to visit.',
+          'La gasolinera que más años estuvo abierta en la Route 66 (1933–1999) — restaurada y gratuita.',
+        ),
+        mapsQuery: "Ambler's Texaco Gas Station Dwight IL",
+      },
+      {
+        id: 'a5-lunch',
+        time: '13:15',
+        name: 'Lunch stop',
+        durationMin: 45,
+        transit: { mode: 'car', minutes: 20 },
+        note: lt(
+          'Pontiac has diners right on the old road — pick one when you get there.',
+          'Pontiac tiene diners en la vieja carretera — elegid al llegar.',
+        ),
+      },
+      {
+        id: 'a5-pontiac',
+        time: '14:00',
+        name: 'Pontiac Oakland Auto Museum + Route 66 murals',
+        durationMin: 60,
+        note: lt(
+          'Free museum, and the giant Route 66 shield mural behind it is THE photo of this leg.',
+          'Museo gratuito, y el mural gigante del escudo Route 66 detrás es LA foto de este tramo.',
+        ),
+        mapsQuery: 'Pontiac Oakland Automobile Museum',
+      },
+      {
+        id: 'a5-bunyon',
+        time: '15:45',
+        name: 'Atlanta — Bunyon Giant & Palms Grill Cafe',
+        durationMin: 20,
+        transit: { mode: 'car', minutes: 45 },
+        note: lt(
+          'The hot-dog-holding muffler man, next to a restored 1930s cafe.',
+          'El "muffler man" con el perrito caliente, junto a un café de los años 30 restaurado.',
+        ),
+        mapsQuery: 'Bunyon Giant Atlanta IL',
+      },
+      {
+        id: 'a5-lauterbach',
+        time: '16:45',
+        name: 'Lauterbach Muffler Man, Springfield IL',
+        durationMin: 20,
+        transit: { mode: 'car', minutes: 40 },
+        note: lt(
+          'Fuel note: from here to Missouri prices drop — the cheapest fill of the whole trip is tomorrow in Joplin.',
+          'Nota de gasolina: de aquí a Misuri bajan los precios — el repostaje más barato de todo el viaje es mañana en Joplin.',
+        ),
+        mapsQuery: 'Lauterbach Giant Springfield Illinois',
+      },
+      {
+        id: 'a5-cozydog',
+        time: '17:10',
+        name: 'Cozy Dog Drive In',
+        durationMin: 30,
+        optional: true,
+        transit: { mode: 'car', minutes: 5 },
+        note: lt(
+          'Birthplace of the corn dog (1946), still run by the same family — a snack stop, right on old 66.',
+          'Cuna del corn dog (1946), todavía de la misma familia — una parada de picoteo, en la vieja 66.',
+        ),
+        mapsQuery: 'Cozy Dog Drive In Springfield Illinois',
+      },
+      {
+        id: 'a5-arrive',
+        time: '19:15',
+        name: 'Arrive in St. Louis — Pear Tree Inn Near Union Station',
+        transit: { mode: 'car', minutes: 95 },
+        note: lt(
+          'Free parking. Dinner in town afterwards — the Arch is tomorrow morning.',
+          'Aparcamiento gratis. Cena en la ciudad después — el Arch es mañana por la mañana.',
+        ),
+        mapsQuery: 'Pear Tree Inn St. Louis Near Union Station',
+      },
     ],
   },
 ];
-
-export function planDayById(id: string): PlanDay | undefined {
-  return CHICAGO_PLAN.find((d) => d.id === id);
-}

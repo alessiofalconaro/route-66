@@ -11,6 +11,7 @@ import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
 import HotelCard from './HotelCard';
+import PlanShortcutCard from './PlanShortcutCard';
 import PoiForm from './PoiForm';
 
 export default function SegmentView({ segment }: { segment: Segment }) {
@@ -47,6 +48,8 @@ export default function SegmentView({ segment }: { segment: Segment }) {
           {editing ? t('doneEditing') : `✏️ ${t('editItinerary')}`}
         </button>
       </div>
+
+      <PlanShortcutCard segmentId={segment.id} />
 
       {segment.warning && (
         <div className="rounded-xl bg-amber-100 dark:bg-amber-950 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm p-3">
