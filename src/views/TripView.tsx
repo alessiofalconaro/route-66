@@ -124,8 +124,18 @@ export default function TripView({ router }: { router: Router }) {
                 }`}
               >
                 {fmtDate(d.date)}
-                {isToday ? ` · ${t('todayLabel')}` : ''}
               </p>
+              {/* Same calendar-driven status as the day plan */}
+              {isToday && (
+                <span className="inline-block rounded-full bg-white text-red-700 text-[10px] font-bold px-2 py-0.5 mt-0.5">
+                  ● {t('statusNow')}
+                </span>
+              )}
+              {isPast && !isToday && (
+                <span className="inline-block rounded-full bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 mt-0.5">
+                  ✓ {t('statusDone')}
+                </span>
+              )}
               <p className="font-semibold leading-snug">
                 {d.mode === 'leg' ? '🚗 ' : '🏙️ '}
                 {titleOf(d)}

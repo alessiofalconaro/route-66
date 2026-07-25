@@ -26,6 +26,24 @@ const TRANSIT_LABEL: Record<PlanTransit['mode'], TKey> = {
   taxi: 'planTaxi',
 };
 
+/**
+ * Id of the step happening right now: the last one whose start time is in the
+ * past, read in the DAY's time zone (the trip crosses three of them, so the
+ * phone's own clock is not a safe reference). Returns undefined before the
+ * first step of the day.
+ */
+function currentStepId(steps: PlanStep[], tz?: string): string | undefined {
+  const now = new Date();
+  const hhmm = tz
+    ? now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz })
+    : now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  let current: string | undefined;
+  for (const s of steps) {
+    if (s.time <= hhmm) current = s.id; // times are "HH:MM", so string compare works
+  }
+  return current;
+}
+
 export default function PlanView({ focus }: { focus?: string }) {
   const { t, lang } = useI18n();
   const { overrides, removeStep, editStep, addStep, moveStep, resetPlan, resetDay } =
@@ -98,6 +116,11 @@ export default function PlanView({ focus }: { focus?: string }) {
         const steps = mergePlanSteps(day, overrides);
         const isOpen = openDays[day.id] ?? false;
         const isToday = day.iso === todayIso();
+        const isPast = day.iso < todayIso();
+        // On today's day, which step is happening right now: the last one
+        // whose start time has passed in that day's own time zone (the route
+        // crosses three, so "now" must be read locally, not on phone time).
+        const nowStepId = isToday ? currentStepId(steps, day.tz) : undefined;
         return (
           <section key={day.id} id={`plan-${day.id}`} className="space-y-2 scroll-mt-2">
             {/* Header = the toggle. Collapsed days show a one-line summary. */}
@@ -108,9 +131,15 @@ export default function PlanView({ focus }: { focus?: string }) {
             >
               <span className="flex-1 min-w-0">
                 <span className="font-bold text-base">{day.title[lang]}</span>
+                {/* Status follows the calendar: nothing before the day comes */}
                 {isToday && (
                   <span className="ml-2 rounded-full bg-red-700 text-white text-[10px] font-bold px-2 py-0.5 align-middle">
-                    {t('todayLabel')}
+                    ● {t('statusNow')}
+                  </span>
+                )}
+                {isPast && (
+                  <span className="ml-2 rounded-full bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 align-middle">
+                    ✓ {t('statusDone')}
                   </span>
                 )}
                 {!isOpen && (
@@ -140,10 +169,21 @@ export default function PlanView({ focus }: { focus?: string }) {
                   </p>
                 )}
 
-                <div className="rounded-xl bg-white dark:bg-stone-900 shadow-sm p-3 space-y-1.5">
+                <div
+                  className={`rounded-xl shadow-sm p-3 space-y-1.5 ${
+                    s.id === nowStepId
+                      ? 'bg-red-50 dark:bg-red-950 ring-2 ring-red-600'
+                      : 'bg-white dark:bg-stone-900'
+                  }`}
+                >
                   <div className="flex items-start gap-2">
                     <span className="shrink-0 rounded-lg bg-red-700 text-white text-xs font-bold px-2 py-1">
                       {s.time}
+                      {s.id === nowStepId && (
+                        <span className="block text-[9px] font-bold leading-none pb-0.5">
+                          ● {t('stepNow')}
+                        </span>
+                      )}
                     </span>
                     {/* Thumbnail of the same place from the itinerary photos,
                         so you can see at a glance what the stop looks like */}
