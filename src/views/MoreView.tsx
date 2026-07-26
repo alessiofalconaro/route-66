@@ -9,6 +9,7 @@ import type { Router } from '../lib/router';
 import ExpensesView from './ExpensesView';
 import SettingsView from './SettingsView';
 import PlanView from './PlanView';
+import ChatView from './ChatView';
 
 export default function MoreView({ router }: { router: Router }) {
   const { t } = useI18n();
@@ -29,6 +30,7 @@ export default function MoreView({ router }: { router: Router }) {
         </button>
         {sub === 'expenses' && <ExpensesView />}
         {sub === 'plan' && <PlanView focus={router.route[2]} />}
+        {sub === 'chat' && <ChatView />}
         {sub === 'shopping' && <ShoppingView />}
         {sub === 'tips' && <DrivingTipsView />}
         {sub === 'emergency' && <EmergencyView />}
@@ -75,11 +77,11 @@ export default function MoreView({ router }: { router: Router }) {
         </a>
       )}
 
-      <button onClick={() => router.navigate('more/plan')} className={item}>
-        🗺️ {t('planTitle')}
-      </button>
       <button onClick={() => router.navigate('more/expenses')} className={item}>
         💵 {t('expensesTitle')}
+      </button>
+      <button onClick={() => router.navigate('more/chat')} className={item}>
+        🤖 {t('navChat')}
       </button>
       <button onClick={() => router.navigate('more/shopping')} className={item}>
         🛒 {t('shoppingTitle')}

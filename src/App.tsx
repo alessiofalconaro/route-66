@@ -16,17 +16,17 @@ import HomeView from './views/HomeView';
 import TripView from './views/TripView';
 import HotelsView from './views/HotelsView';
 import FuelView from './views/FuelView';
-import ChatView from './views/ChatView';
+import PlanView from './views/PlanView';
 import MoreView from './views/MoreView';
 
-type Tab = 'home' | 'trip' | 'hotels' | 'fuel' | 'chat' | 'more';
+type Tab = 'home' | 'trip' | 'hotels' | 'fuel' | 'plan' | 'more';
 
 const TABS: { id: Tab; icon: string; labelKey: TKey }[] = [
   { id: 'home', icon: '🏠', labelKey: 'navHome' },
   { id: 'trip', icon: '📅', labelKey: 'navTrip' },
   { id: 'hotels', icon: '🛏️', labelKey: 'navHotels' },
   { id: 'fuel', icon: '⛽', labelKey: 'navFuel' },
-  { id: 'chat', icon: '🤖', labelKey: 'navChat' },
+  { id: 'plan', icon: '🗺️', labelKey: 'navPlan' },
   { id: 'more', icon: '☰', labelKey: 'navMore' },
 ];
 
@@ -216,7 +216,7 @@ export default function App() {
         {tab === 'trip' && <TripView router={router} />}
         {tab === 'hotels' && <HotelsView />}
         {tab === 'fuel' && <FuelView />}
-        {tab === 'chat' && <ChatView />}
+        {tab === 'plan' && <PlanView focus={router.route[1]} />}
         {tab === 'more' && <MoreView router={router} />}
       </main>
 

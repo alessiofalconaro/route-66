@@ -20,6 +20,30 @@ export function fmtSpeed(mph: number): string {
 }
 
 /**
+ * Distance (km) to reach a stop. Uses the explicit `km` when the data has it;
+ * otherwise ESTIMATES it from the mode and the minutes, using typical average
+ * speeds — these are planning figures, like the durations themselves. Car is
+ * split city vs highway because a single speed can't fit both.
+ */
+export function transitKm(mode: string, minutes: number, km?: number): number {
+  if (typeof km === 'number') return km;
+  const kmh =
+    mode === 'walk' ? 4.8 :
+    mode === 'bus' ? 18 :
+    mode === 'taxi' ? 26 :
+    minutes < 20 ? 32 : 82; // car: city vs highway
+  return (kmh * minutes) / 60;
+}
+
+/** "0.5 km / 0.3 mi" for short hops, "90 km / 56 mi" for legs (km first —
+ *  the travelers think in km; whole numbers once past 10). */
+export function fmtTransitDistance(km: number): string {
+  const mi = km / KM_PER_MILE;
+  const r = (n: number) => (n < 10 ? (Math.round(n * 10) / 10).toString() : Math.round(n).toString());
+  return `${r(km)} km / ${r(mi)} mi`;
+}
+
+/**
  * "45 min" up to an hour, "1h 30m" beyond, "2h" when it is exact.
  * Takes the localized "min" label so it still reads right in Spanish.
  */

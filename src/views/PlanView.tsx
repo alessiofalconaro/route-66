@@ -8,7 +8,7 @@ import { todayIso } from '../data/days';
 import { mergePlanSteps, usePlanOverrides } from '../lib/planOverrides';
 import { useSessionState } from '../lib/storage';
 import { mapsUrl } from '../lib/maps';
-import { fmtDuration } from '../lib/units';
+import { fmtDuration, fmtTransitDistance, transitKm } from '../lib/units';
 import { planStepPhoto } from '../data/plan/stepPhotos';
 import { useI18n, type TKey } from '../i18n';
 
@@ -164,6 +164,7 @@ export default function PlanView({ focus }: { focus?: string }) {
                 {s.transit && (
                   <p className="pl-5 pb-1 text-xs text-stone-500 dark:text-stone-400">
                     {TRANSIT_ICON[s.transit.mode]} {fmtDuration(s.transit.minutes, t('minutes'))} ·{' '}
+                    {fmtTransitDistance(transitKm(s.transit.mode, s.transit.minutes, s.transit.km))} ·{' '}
                     {t(TRANSIT_LABEL[s.transit.mode])}
                     {s.transit.detail ? ` — ${s.transit.detail[lang]}` : ''}
                   </p>
@@ -320,6 +321,7 @@ function StepForm({
     durationMin: initial?.durationMin?.toString() ?? '',
     transitMode: (initial?.transit?.mode ?? '') as '' | PlanTransit['mode'],
     transitMin: initial?.transit?.minutes?.toString() ?? '',
+    transitKm: initial?.transit?.km?.toString() ?? '',
     note: initial?.note?.[lang] ?? '',
     mapsQuery: initial?.mapsQuery ?? '',
   });
@@ -342,6 +344,8 @@ function StepForm({
         ? {
             mode: form.transitMode,
             minutes: form.transitMin ? Number(form.transitMin) : 0,
+            // empty km field = let the app estimate it from mode + minutes
+            km: form.transitKm ? Number(form.transitKm) : undefined,
             // keep the bundled detail text if the mode didn't change
             detail: initial?.transit?.mode === form.transitMode ? initial.transit.detail : undefined,
           }
@@ -394,7 +398,7 @@ function StepForm({
               ))}
             </select>
           </label>
-          <label className="block text-sm w-28">
+          <label className="block text-sm w-20">
             {t('minutes')}
             <input
               className={input}
@@ -402,6 +406,19 @@ function StepForm({
               min="0"
               value={form.transitMin}
               onChange={set('transitMin')}
+              disabled={!form.transitMode}
+            />
+          </label>
+          <label className="block text-sm w-20">
+            km
+            <input
+              className={input}
+              type="number"
+              min="0"
+              step="0.1"
+              placeholder="auto"
+              value={form.transitKm}
+              onChange={set('transitKm')}
               disabled={!form.transitMode}
             />
           </label>

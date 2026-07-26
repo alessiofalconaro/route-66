@@ -18,6 +18,9 @@ export interface LText {
 export interface PlanTransit {
   mode: 'walk' | 'bus' | 'car' | 'taxi';
   minutes: number;
+  km?: number; // distance to reach this stop; if absent it is ESTIMATED from
+  //             mode + minutes (see lib/units.transitKm) so every stop still
+  //             shows a distance. Set it when the real figure is known.
   detail?: LText; // e.g. "bus 151 from Michigan Ave"
 }
 
