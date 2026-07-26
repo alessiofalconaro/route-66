@@ -27,11 +27,17 @@ export function fmtSpeed(mph: number): string {
  */
 export function transitKm(mode: string, minutes: number, km?: number): number {
   if (typeof km === 'number') return km;
+  // Average speeds (km/h). Car scales with the leg length: a short hop is
+  // city crawl, a long one is interstate cruise (US limits here are 70-80 mph
+  // ≈ 112-128 km/h, so a long leg averages ~110 with the odd slowdown). This
+  // is why a fixed speed made long legs look 40-50 km too short.
   const kmh =
     mode === 'walk' ? 4.8 :
     mode === 'bus' ? 18 :
     mode === 'taxi' ? 26 :
-    minutes < 20 ? 32 : 82; // car: city vs highway
+    minutes <= 10 ? 34 : // car, in town
+    minutes <= 25 ? 68 : // car, getting out of town / mixed
+    110; // car, interstate
   return (kmh * minutes) / 60;
 }
 
