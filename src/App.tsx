@@ -48,6 +48,14 @@ export default function App() {
     if (router.route[0] === 'home') lastHomeRoute.current = router.route.join('/');
   }, [router.route]);
 
+  // Changing tab starts that screen at the TOP. There is a single scroll
+  // container, so without this it keeps the previous screen's scroll position
+  // — e.g. a shortcut into the plan from a scrolled-down Home/Trip would land
+  // mid-page instead of at the plan's title.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0 });
+  }, [tab]);
+
   // Pull the shared itinerary once at startup (and whenever the app comes
   // back to the foreground) so edits made by the others appear. Bumping
   // syncGen remounts the views (key on <main>) so they re-read storage.
