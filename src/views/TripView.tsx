@@ -155,7 +155,7 @@ export default function TripView({ router }: { router: Router }) {
             {/* shortcut straight into that day's timed plan */}
             {planDayByIso(d.date) && (
               <button
-                onClick={() => router.navigate(`more/plan/${planDayByIso(d.date)!.id}`)}
+                onClick={() => router.navigate(`plan/${planDayByIso(d.date)!.id}`)}
                 aria-label={t('planTitle')}
                 className={`shrink-0 rounded-lg px-2.5 py-1.5 text-sm ${
                   isToday ? 'bg-red-800 text-white' : 'bg-stone-100 dark:bg-stone-800'

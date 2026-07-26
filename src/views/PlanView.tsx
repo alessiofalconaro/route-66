@@ -85,7 +85,7 @@ export default function PlanView({ focus }: { focus?: string }) {
 
       {/* Focused view (one segment/city): offer the way back to all 17 days */}
       {focused && (
-        <a href="#/more/plan" className="inline-block text-sm font-medium text-red-700 dark:text-red-400">
+        <a href="#/plan" className="inline-block text-sm font-medium text-red-700 dark:text-red-400">
           ← {t('planAllDays')}
         </a>
       )}

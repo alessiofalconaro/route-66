@@ -21,7 +21,7 @@ export default function PlanShortcutCard({ segmentId, cityId }: Props) {
   const key = segmentId ?? cityId;
   return (
     <a
-      href={`#/more/plan/${key}`}
+      href={`#/plan/${key}`}
       className="block rounded-xl bg-red-700 text-white shadow-sm p-3"
     >
       <span className="text-sm font-medium">🗺️ {t('planDayCard')} →</span>
