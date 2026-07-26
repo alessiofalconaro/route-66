@@ -9,7 +9,7 @@ import { mergePlanSteps, usePlanOverrides } from '../lib/planOverrides';
 import { useSessionState } from '../lib/storage';
 import { mapsUrl } from '../lib/maps';
 import { fmtDuration, fmtTransitDistance, transitKm } from '../lib/units';
-import { planStepPhoto } from '../data/plan/stepPhotos';
+import { planStepPhoto, stepIcon } from '../data/plan/stepPhotos';
 import { useI18n, type TKey } from '../i18n';
 
 const TRANSIT_ICON: Record<PlanTransit['mode'], string> = {
@@ -186,15 +186,24 @@ export default function PlanView({ focus }: { focus?: string }) {
                         </span>
                       )}
                     </span>
-                    {/* Thumbnail of the same place from the itinerary photos,
-                        so you can see at a glance what the stop looks like */}
-                    {planStepPhoto(s.mapsQuery) && (
+                    {/* A 56×56 tile on every row so the text always lines up:
+                        the place's itinerary photo when there is one, else a
+                        category emoji (🕐 for a time-zone change, 🍽️ for a
+                        meal, 🛏️ for a hotel, …) at the same size. */}
+                    {planStepPhoto(s.mapsQuery) ? (
                       <img
                         src={planStepPhoto(s.mapsQuery)}
                         alt=""
                         loading="lazy"
                         className="w-14 h-14 rounded-lg object-cover shrink-0"
                       />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        className="w-14 h-14 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-3xl shrink-0"
+                      >
+                        {stepIcon(s)}
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm leading-tight">{s.name}</p>

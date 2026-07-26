@@ -71,6 +71,16 @@ export const SOUTHWEST_DAYS: PlanDay[] = [
         ),
       },
       {
+        id: 'a10-laundry',
+        time: '15:45',
+        name: 'Laundry',
+        durationMin: 90,
+        note: lt(
+          'Good day for it: two nights here and a pool to sit by while it runs. Embassy Suites has a guest laundry room (detergent at the front desk); a wash + dry is about 1.5 h. Do it now so everything is dry before the 06:00 start tomorrow.',
+          'Buen día para hacerla: dos noches aquí y una piscina donde esperar. El Embassy Suites tiene lavandería para huéspedes (detergente en recepción); lavado + secado es ~1,5 h. Hacedla ahora para tener todo seco antes de salir a las 06:00 mañana.',
+        ),
+      },
+      {
         id: 'a10-sandia',
         time: '18:30',
         name: 'Sandia Peak Tramway (sunset)',

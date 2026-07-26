@@ -16,7 +16,7 @@ const en = {
   navTrip: 'Trip',
   navHotels: 'Hotels',
   navFuel: 'Fuel',
-  navPlan: 'Day-by-day Plan',
+  navPlan: 'Day-by-day',
   navChat: 'Assistant',
   navMore: 'More',
   // Home
@@ -269,7 +269,7 @@ const es: typeof en = {
   navTrip: 'Viaje',
   navHotels: 'Hoteles',
   navFuel: 'Gasolina',
-  navPlan: 'Plan día a día',
+  navPlan: 'Día a día',
   navChat: 'Asistente',
   navMore: 'Más',
   whereAreWe: '¿Dónde estamos?',

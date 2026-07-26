@@ -262,7 +262,7 @@ export default function App() {
               }`}
             >
               <span className="text-2xl leading-none">{tb.icon}</span>
-              {t(tb.labelKey)}
+              <span className="whitespace-nowrap">{t(tb.labelKey)}</span>
             </button>
           ))}
         </div>
