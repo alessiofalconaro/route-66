@@ -97,6 +97,31 @@ export function usePlanOverrides() {
     [setOverrides],
   );
 
+  /** Applies several step edits in ONE write (used by "recompute times", so
+   *  the whole day is one state update and one sync push). */
+  const editSteps = useCallback(
+    (updates: Record<string, Partial<PlanStep>>) => {
+      setOverrides((ov) => {
+        const editedSteps = { ...ov.editedSteps };
+        for (const [id, changes] of Object.entries(updates)) {
+          editedSteps[id] = { ...editedSteps[id], ...changes };
+        }
+        return { ...ov, editedSteps };
+      });
+      touchAndSync();
+    },
+    [setOverrides],
+  );
+
+  /** Stores a whole new order at once (what drag-to-reorder commits). */
+  const setStepOrder = useCallback(
+    (dayId: string, ids: string[]) => {
+      setOverrides((ov) => ({ ...ov, stepOrder: { ...ov.stepOrder, [dayId]: ids } }));
+      touchAndSync();
+    },
+    [setOverrides],
+  );
+
   /** Moves a step one position up or down within its day. */
   const moveStep = useCallback(
     (day: PlanDay, ov: PlanOverrides, stepId: string, direction: -1 | 1) => {
@@ -153,5 +178,15 @@ export function usePlanOverrides() {
     [setOverrides],
   );
 
-  return { overrides, removeStep, editStep, addStep, moveStep, resetPlan, resetDay };
+  return {
+    overrides,
+    removeStep,
+    editStep,
+    editSteps,
+    addStep,
+    moveStep,
+    setStepOrder,
+    resetPlan,
+    resetDay,
+  };
 }

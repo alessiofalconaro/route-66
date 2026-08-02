@@ -82,6 +82,18 @@ export function useOverrides() {
     [setOverrides],
   );
 
+  /** Stores a whole new order at once (what drag-to-reorder commits). */
+  const setPoiOrder = useCallback(
+    (segmentId: string, ids: string[]) => {
+      setOverrides((prev) => ({
+        ...prev,
+        poiOrder: { ...prev.poiOrder, [segmentId]: ids },
+      }));
+      touchAndSync();
+    },
+    [setOverrides],
+  );
+
   /** Moves a POI one position up or down within its segment. */
   const movePoi = useCallback(
     (segment: Segment, ov: UserOverrides, poiId: string, direction: -1 | 1) => {
@@ -107,5 +119,5 @@ export function useOverrides() {
     touchAndSync();
   }, [setOverrides]);
 
-  return { overrides, setOverrides, removePoi, editPoi, addPoi, movePoi, resetAll };
+  return { overrides, setOverrides, removePoi, editPoi, addPoi, movePoi, setPoiOrder, resetAll };
 }

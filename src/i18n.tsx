@@ -249,6 +249,15 @@ const en = {
   planTime: 'Time',
   planResetBtn: 'Reset plan to default',
   planResetConfirm: 'Discard ALL plan edits and restore the suggested plan?',
+  // Drag to reorder
+  dragToReorder: 'Drag to reorder',
+  dragHint: 'Hold a stop and drag it, or use the ⠿ grip.',
+  // Plan: travel info after a reorder
+  planRouteStale: 'order changed — travel not recalculated',
+  planCheckRoute: 'check route',
+  planRetimeBtn: 'Recompute the times of this day',
+  planRetimeConfirm:
+    'Rebuild every start time of this day, chaining stop durations and travel times from the first stop? Booked times (e.g. the river cruise) will move too.',
   // Rental car section (Chicago pickup / LAX drop-off)
   carRentalTitle: 'Rental car',
   carPickupLabel: 'Pickup',
@@ -485,6 +494,13 @@ const es: typeof en = {
   planTime: 'Hora',
   planResetBtn: 'Restablecer el plan original',
   planResetConfirm: '¿Descartar TODOS los cambios y restaurar el plan sugerido?',
+  dragToReorder: 'Arrastrar para reordenar',
+  dragHint: 'Mantén pulsada una parada y arrástrala, o usa el asa ⠿.',
+  planRouteStale: 'orden cambiado — trayecto no recalculado',
+  planCheckRoute: 'ver trayecto',
+  planRetimeBtn: 'Recalcular las horas de este día',
+  planRetimeConfirm:
+    '¿Recalcular todas las horas de este día, encadenando duraciones y trayectos desde la primera parada? Las horas reservadas (p. ej. el crucero) también se moverán.',
   carRentalTitle: 'Coche de alquiler',
   carPickupLabel: 'Recogida',
   carDropoffLabel: 'Entrega',

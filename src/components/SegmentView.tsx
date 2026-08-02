@@ -8,6 +8,7 @@ import { mapsUrl } from '../lib/maps';
 import { fmtDistance } from '../lib/units';
 import { mergePois, useOverrides } from '../lib/overrides';
 import { photoRef, putPhoto } from '../lib/photoStore';
+import { useDragSort } from '../lib/dragSort';
 import { useVisited } from '../lib/visited';
 import { useI18n } from '../i18n';
 import PoiCard from './PoiCard';
@@ -17,7 +18,7 @@ import PoiForm from './PoiForm';
 
 export default function SegmentView({ segment }: { segment: Segment }) {
   const { t } = useI18n();
-  const { overrides, removePoi, editPoi, addPoi, movePoi } = useOverrides();
+  const { overrides, removePoi, editPoi, addPoi, movePoi, setPoiOrder } = useOverrides();
   const { isVisited, toggleVisited } = useVisited();
   const [editing, setEditing] = useState(false);
   const [sortToSee, setSortToSee] = useState(false);
@@ -27,6 +28,20 @@ export default function SegmentView({ segment }: { segment: Segment }) {
   const pois = mergePois(segment, overrides);
   const hotel = hotelById(segment.hotelId);
   const defaultCity = pois[0]?.city ?? hotel?.city ?? '';
+
+  // Drag-to-reorder. "To-see first" is a temporary VIEW of the list, so
+  // dragging is only offered on the real order — otherwise a drop would
+  // scramble the itinerary in a way the user didn't see.
+  const dragEnabled = editing && !sortToSee;
+  const drag = useDragSort({
+    ids: pois.map((p) => p.id),
+    enabled: dragEnabled,
+    onCommit: (ids) => setPoiOrder(segment.id, ids),
+  });
+  const byId = new Map(pois.map((p) => [p.id, p]));
+  const shownPois = sortToSee
+    ? [...pois].sort((a, b) => Number(isVisited(a.id)) - Number(isVisited(b.id)))
+    : drag.order.map((id) => byId.get(id)).filter((p): p is Poi => !!p);
 
   return (
     <div className="space-y-3">
@@ -79,21 +94,31 @@ export default function SegmentView({ segment }: { segment: Segment }) {
       {pois.length === 0 && (
         <p className="text-sm text-stone-500 dark:text-stone-400">{t('noPois')}</p>
       )}
-      {(sortToSee
-        ? [...pois].sort((a, b) => Number(isVisited(a.id)) - Number(isVisited(b.id)))
-        : pois
-      ).map((p) => (
-        <PoiCard
+      {dragEnabled && pois.length > 1 && (
+        <p className="text-xs text-stone-500 dark:text-stone-400">⠿ {t('dragHint')}</p>
+      )}
+      {shownPois.map((p) => (
+        <div
           key={p.id}
-          poi={p}
-          visited={isVisited(p.id)}
-          onToggleVisited={() => toggleVisited(p.id)}
-          editing={editing}
-          onEdit={() => setModal(p)}
-          onRemove={() => confirm(`${t('removeConfirm')} — ${p.name}`) && removePoi(p.id)}
-          onMoveUp={() => movePoi(segment, overrides, p.id, -1)}
-          onMoveDown={() => movePoi(segment, overrides, p.id, 1)}
-        />
+          {...(dragEnabled ? drag.itemProps(p.id) : {})}
+          className={
+            drag.draggingId === p.id
+              ? 'rounded-xl ring-2 ring-red-600 shadow-lg opacity-95'
+              : undefined
+          }
+        >
+          <PoiCard
+            poi={p}
+            visited={isVisited(p.id)}
+            onToggleVisited={() => toggleVisited(p.id)}
+            editing={editing}
+            onEdit={() => setModal(p)}
+            onRemove={() => confirm(`${t('removeConfirm')} — ${p.name}`) && removePoi(p.id)}
+            onMoveUp={() => movePoi(segment, overrides, p.id, -1)}
+            onMoveDown={() => movePoi(segment, overrides, p.id, 1)}
+            dragHandleProps={dragEnabled ? drag.handleProps(p.id) : undefined}
+          />
+        </div>
       ))}
 
       {editing && (

@@ -49,6 +49,17 @@ export function fmtTransitDistance(km: number): string {
   return `${r(km)} km / ${r(mi)} mi`;
 }
 
+/** "09:30" → 570. Plan times are always "HH:MM". */
+export function hhmmToMinutes(hhmm: string): number {
+  return Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+}
+
+/** 570 → "09:30" (wraps around midnight rather than overflowing). */
+export function minutesToHhmm(minutes: number): string {
+  const m = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
 /**
  * "45 min" up to an hour, "1h 30m" beyond, "2h" when it is exact.
  * Takes the localized "min" label so it still reads right in Spanish.

@@ -38,6 +38,8 @@ interface Props {
   onRemove?: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  /** Pointer handlers that start a drag straight away (the ⠿ grip). */
+  dragHandleProps?: React.ComponentProps<'button'>;
 }
 
 export default function PoiCard({
@@ -49,6 +51,7 @@ export default function PoiCard({
   onRemove,
   onMoveUp,
   onMoveDown,
+  dragHandleProps,
 }: Props) {
   const { t } = useI18n();
 
@@ -121,6 +124,16 @@ export default function PoiCard({
 
           {editing && (
             <span className="inline-flex gap-1">
+              {/* Grip: press and drag to reorder (holding the card works too) */}
+              {dragHandleProps && (
+                <button
+                  {...dragHandleProps}
+                  aria-label={t('dragToReorder')}
+                  className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-sm cursor-grab active:cursor-grabbing"
+                >
+                  ⠿
+                </button>
+              )}
               <button onClick={onMoveUp} aria-label={t('moveUp')} className="px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-sm">
                 ↑
               </button>
